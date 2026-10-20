@@ -1,16 +1,14 @@
 ---
 name: Question
-about: Ask a usage or setup question
-title: "[Question]: "
+about: Ask a usage, setup, or configuration question
 labels: question
-assignees: N6REJ
 ---
 
-## Question
+**Question**
 What would you like to know?
 
-## Goal
+**Goal**
 What are you trying to achieve?
 
-## Context
-Provide relevant details (workflow YAML, target repo, logs, screenshots).
+**Context**
+Provide relevant details (configuration, versions, logs, screenshots, and so on).
