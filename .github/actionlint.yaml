@@ -1,0 +1,6 @@
+# https://github.com/rhysd/actionlint/blob/main/docs/config.md
+# ubuntu-26.04 is a GitHub-hosted runner label that this actionlint version
+# does not know yet. Declare it so runs-on checks stop failing.
+self-hosted-runner:
+  labels:
+    - ubuntu-26.04
