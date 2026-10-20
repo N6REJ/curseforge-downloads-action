@@ -1,22 +1,20 @@
 ---
 name: Feature request
-about: Suggest an improvement for curseforge-downloads-action
-title: "[Feature]: "
+about: Suggest an improvement or new capability
 labels: enhancement
-assignees: N6REJ
 ---
 
-## Problem
-What user problem are you trying to solve?
+**Problem**
+What problem or use case would this feature solve?
 
-## Proposed Solution
-Describe the feature you want.
+**Proposed solution**
+Describe the behavior or capability you would like.
 
-## Alternatives Considered
-What alternatives did you consider?
+**Alternatives considered**
+Any other approaches you considered.
 
-## Scope
-Is this small, medium, or large in scope?
+**Scope**
+Is this a small, medium, or large change?
 
-## Additional Context
+**Additional context**
 Examples, references, or related tools.
