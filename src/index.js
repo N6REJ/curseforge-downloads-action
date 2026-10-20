@@ -4,7 +4,8 @@ const fs = require("node:fs");
 
 const { parseActionInputs } = require("./lib/validation");
 const { createGitHubClient } = require("./lib/github-api");
-const { publishPayload, publishChartIfEnabled } = require("./lib/publish");
+const { createCurseForgeClient } = require("./lib/curseforge-api");
+const { publishPayload, publishChartIfEnabled, publishDashboardIfEnabled } = require("./lib/publish");
 
 function setOutput(name, value) {
   const outputFile = process.env.GITHUB_OUTPUT;
@@ -22,25 +23,31 @@ function appendSummary(lines) {
   fs.appendFileSync(summaryFile, `${lines.join("\n")}\n`, "utf8");
 }
 
-function appendRunSummary({ inputs, payload, changed, totalSource, chartResult }, writeSummary) {
+function appendRunSummary({ inputs, payload, changed, totalSource, chartResult, dashboardResult }, writeSummary) {
   writeSummary([
-    "## GitHub Downloads Snapshot",
+    "## CurseForge Downloads Snapshot",
     "",
     `- Repository: \`${inputs.owner}/${inputs.repo}\``,
+    `- CurseForge mod: \`${inputs.curseforgeModId}\``,
     `- Output: \`${inputs.outputBranch}:${inputs.outputPath}\``,
     `- Published: **${changed ? "yes" : "no (no material change)"}**`,
     `- Chart: **${inputs.publishChart ? "enabled" : "disabled"}**${inputs.publishChart ? ` (\`${inputs.outputBranch}:${inputs.chartOutputPath}\`, updated: ${chartResult.publishedCount}/${chartResult.totalCount})` : ""}`,
+    `- Dashboard: **${inputs.publishDashboard ? "enabled" : "disabled"}**${inputs.publishDashboard ? ` (\`${inputs.outputBranch}:${inputs.dashboardPath}\`, updated: ${dashboardResult.published ? "yes" : "no"})` : ""}`,
     `- Total source: **${totalSource}**`,
     `- Total: **${payload.stats.total}**`,
     `- Day: **${payload.stats.day}** (partial: ${payload.partial.day})`,
     `- Week: **${payload.stats.week}** (partial: ${payload.partial.week})`,
     `- Month: **${payload.stats.month}** (partial: ${payload.partial.month})`,
+    `- Year: **${payload.stats.year}** (partial: ${payload.partial.year})`,
     `- Snapshot count: **${payload.snapshots.count}**`,
     `- Generated at: \`${payload.generatedAt}\``,
   ]);
 }
 
-function setActionOutputs({ inputs, payload, changed, totalSource, chartResult }, writeOutput) {
+function setActionOutputs(
+  { inputs, payload, changed, totalSource, chartResult, dashboardResult },
+  writeOutput,
+) {
   writeOutput("owner", inputs.owner);
   writeOutput("repo", inputs.repo);
   writeOutput("generated_at", payload.generatedAt);
@@ -48,14 +55,18 @@ function setActionOutputs({ inputs, payload, changed, totalSource, chartResult }
   writeOutput("day", payload.stats.day);
   writeOutput("week", payload.stats.week);
   writeOutput("month", payload.stats.month);
+  writeOutput("year", payload.stats.year);
   writeOutput("partial_day", payload.partial.day);
   writeOutput("partial_week", payload.partial.week);
   writeOutput("partial_month", payload.partial.month);
+  writeOutput("partial_year", payload.partial.year);
   writeOutput("chart_output_path", inputs.chartOutputPath);
   writeOutput("chart_published", chartResult.publishedAny);
   writeOutput("chart_published_count", chartResult.publishedCount);
   writeOutput("chart_total_count", chartResult.totalCount);
   writeOutput("chart_files", chartResult.files.join(","));
+  writeOutput("dashboard_path", inputs.dashboardPath);
+  writeOutput("dashboard_published", dashboardResult.published);
   writeOutput("output_branch", inputs.outputBranch);
   writeOutput("output_path", inputs.outputPath);
   writeOutput("total_source", totalSource);
@@ -66,6 +77,7 @@ async function run(options = {}) {
   const env = options.env || process.env;
   const parseInputs = options.parseActionInputs || parseActionInputs;
   const createClient = options.createGitHubClient || createGitHubClient;
+  const createCurseForge = options.createCurseForgeClient || createCurseForgeClient;
   const nowProvider = options.nowProvider || (() => new Date());
   const writeOutput = options.setOutput || setOutput;
   const writeSummary = options.appendSummary || appendSummary;
@@ -79,13 +91,28 @@ async function run(options = {}) {
     );
   }
 
+  if (!inputs.curseforgeModId) {
+    throw new Error(
+      "A CurseForge mod id is required. Pass with.curseforge_mod_id: '<your CurseForge mod id>'.",
+    );
+  }
+
+  const cfApiKey = inputs.cfApiKey || env.CF_API_KEY;
+  if (!cfApiKey) {
+    throw new Error(
+      "A CurseForge API key is required. Pass with.cf_api_key: ${{ secrets.CF_API_KEY }} (recommended), or set env.CF_API_KEY.",
+    );
+  }
+
   const client = createClient(token);
+  const curseForgeClient = createCurseForge(cfApiKey);
   const repoMeta = await client.getRepository(inputs.owner, inputs.repo);
   await client.ensureBranch(inputs.owner, inputs.repo, inputs.outputBranch, repoMeta.default_branch);
 
   const now = nowProvider();
   const publishResult = await publishPayload({
     client,
+    curseForgeClient,
     inputs,
     repoMeta,
     now,
@@ -100,12 +127,21 @@ async function run(options = {}) {
     logger,
   });
 
+  const dashboardResult = await publishDashboardIfEnabled({
+    client,
+    inputs,
+    payload: publishResult.payload,
+    commitMessage: publishResult.commitMessage,
+    logger,
+  });
+
   const result = {
     inputs,
     payload: publishResult.payload,
     changed: publishResult.changed,
     totalSource: publishResult.totalSource,
     chartResult,
+    dashboardResult,
   };
 
   setActionOutputs(result, writeOutput);

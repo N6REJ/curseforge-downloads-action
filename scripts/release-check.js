@@ -26,9 +26,9 @@ function main() {
     "src/lib/chart-config.js",
     ".github/EULA.md",
     ".github/PRIVACY.md",
-    "templates/workflows/gh-dl-daily.yml",
-    "templates/workflows/gh-dl-hourly.yml",
-    "templates/workflows/gh-dl-daily-with-chart.yml",
+    "templates/workflows/curseforge-daily.yml",
+    "templates/workflows/curseforge-hourly.yml",
+    "templates/workflows/curseforge-daily-with-chart.yml",
   ];
 
   for (const filePath of requiredFiles) {
@@ -38,10 +38,30 @@ function main() {
   }
 
   if (fileExists("action.yml")) {
+    assertIncludes(errors, "action.yml", "curseforge_mod_id", "CurseForge mod id input");
+    assertIncludes(errors, "action.yml", "cf_api_key", "CurseForge API key input");
+    assertIncludes(errors, "action.yml", "node24", "Node 24 runtime");
     assertIncludes(errors, "action.yml", "chart_date_label_format", "chart date format input");
     assertIncludes(errors, "action.yml", "chart_show_generated_at", "generated footer input");
     assertIncludes(errors, "action.yml", "chart_title_mode", "title mode input");
     assertIncludes(errors, "action.yml", "chart_title_text", "custom title input");
+    assertIncludes(errors, "action.yml", "publish_dashboard", "dashboard toggle input");
+    assertIncludes(errors, "action.yml", "dashboard_path", "dashboard path input");
+    assertIncludes(errors, "action.yml", "partial_year", "year partial output");
+    assertIncludes(errors, "action.yml", "yearly", "yearly chart type");
+  }
+
+  if (fileExists("src/lib/chart-config.js")) {
+    assertIncludes(errors, "src/lib/chart-config.js", "yearly", "yearly chart type meta");
+  }
+
+  if (fileExists("src/lib/dashboard.js")) {
+    assertIncludes(
+      errors,
+      "src/lib/dashboard.js",
+      'require("./chart-config")',
+      "shared chart config import",
+    );
   }
 
   if (fileExists("src/lib/chart.js")) {
@@ -54,37 +74,31 @@ function main() {
   }
 
   if (fileExists("README.md")) {
-    assertIncludes(
-      errors,
-      "README.md",
-      "https://github.com/Justagwas/.github/blob/main/SUPPORT.md",
-      "shared support policy link",
-    );
-    assertIncludes(
-      errors,
-      "README.md",
-      "https://justagwas.com/projects/gda#generator-lab",
-      "generator lab link",
-    );
+    assertIncludes(errors, "README.md", "curseforge_mod_id", "CurseForge mod id docs");
+    assertIncludes(errors, "README.md", "CF_API_KEY", "CurseForge API key secret docs");
     assertIncludes(errors, "README.md", "chart_date_label_format", "chart date format docs");
     assertIncludes(errors, "README.md", "chart_show_generated_at", "generated footer docs");
     assertIncludes(errors, "README.md", "chart_title_mode", "title mode docs");
     assertIncludes(errors, "README.md", "chart_title_text", "custom title docs");
+    assertIncludes(errors, "README.md", "publish_dashboard", "dashboard toggle docs");
+    assertIncludes(errors, "README.md", "dashboard_path", "dashboard path docs");
+    assertIncludes(errors, "README.md", "partial_year", "year partial docs");
+    assertIncludes(errors, "README.md", "yearly", "yearly chart docs");
   }
 
   if (fileExists(".github/EULA.md")) {
     assertIncludes(
       errors,
       ".github/EULA.md",
-      "https://github.com/Justagwas/.github/blob/main/SUPPORT.md",
-      "shared support policy link",
+      "curseforge-downloads-action",
+      "repository name",
     );
   }
 
-  if (fileExists("templates/workflows/gh-dl-daily-with-chart.yml")) {
+  if (fileExists("templates/workflows/curseforge-daily-with-chart.yml")) {
     assertIncludes(
       errors,
-      "templates/workflows/gh-dl-daily-with-chart.yml",
+      "templates/workflows/curseforge-daily-with-chart.yml",
       'publish_chart: "true"',
       "chart workflow publishing",
     );

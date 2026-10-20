@@ -1,4 +1,4 @@
-name: gh-dl-daily-with-chart
+name: curseforge-daily-with-chart
 
 on:
   schedule:
@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: gh-dl-${{ github.repository }}-${{ github.ref }}
+  group: curseforge-${{ github.repository }}-${{ github.ref }}
   cancel-in-progress: false
 
 permissions:
@@ -18,20 +18,22 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
 
-      - name: Publish downloads.json and trend chart to gh-pages
-        uses: justagwas/github-downloads-action@v1
+      - name: Publish downloads.json and trend chart to stats-data
+        uses: N6REJ/curseforge-downloads-action@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          window_days: "45"
+          curseforge_mod_id: "0000000"
+          cf_api_key: ${{ secrets.CF_API_KEY }}
+          window_days: "365"
           enable_hourly_profile: "false"
-          output_branch: "gh-pages"
-          output_path: "gh-dl/downloads.json"
+          output_branch: "stats-data"
+          output_path: "curseforge/downloads.json"
           min_refresh_minutes: "0"
           publish_chart: "true"
-          chart_output_path: "gh-dl/downloads-trend.svg"
-          chart_types: "total-trend,daily,weekly,monthly"
+          chart_output_path: "curseforge/downloads-trend.svg"
+          chart_types: "total-trend,daily,weekly,monthly,yearly"
           chart_themes: "black,slate,orange"
-          charts_output_dir: "gh-dl/charts"
+          charts_output_dir: "curseforge/charts"
           chart_width: "1000"
           chart_height: "360"
           chart_zero_baseline: "true"

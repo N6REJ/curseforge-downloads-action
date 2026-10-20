@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://gh-dl.justagwas.com/schema/downloads.schema.json",
-  "title": "GitHub Downloads Snapshot",
+  "$id": "https://raw.githubusercontent.com/N6REJ/curseforge-downloads-action/main/schema/downloads.schema.json",
+  "title": "CurseForge Downloads Snapshot",
   "type": "object",
   "required": [
     "schemaVersion",
@@ -37,22 +37,24 @@
     },
     "stats": {
       "type": "object",
-      "required": ["total", "day", "week", "month"],
+      "required": ["total", "day", "week", "month", "year"],
       "properties": {
         "total": { "type": "number", "minimum": 0 },
         "day": { "type": "number", "minimum": 0 },
         "week": { "type": "number", "minimum": 0 },
-        "month": { "type": "number", "minimum": 0 }
+        "month": { "type": "number", "minimum": 0 },
+        "year": { "type": "number", "minimum": 0 }
       },
       "additionalProperties": false
     },
     "partial": {
       "type": "object",
-      "required": ["day", "week", "month"],
+      "required": ["day", "week", "month", "year"],
       "properties": {
         "day": { "type": "boolean" },
         "week": { "type": "boolean" },
-        "month": { "type": "boolean" }
+        "month": { "type": "boolean" },
+        "year": { "type": "boolean" }
       },
       "additionalProperties": false
     },

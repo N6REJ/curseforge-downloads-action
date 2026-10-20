@@ -29,11 +29,13 @@ function testBuildPayloadExactBaseline() {
     day: 5,
     week: 20,
     month: 50,
+    year: 50,
   });
   assert.deepEqual(payload.partial, {
     day: false,
     week: false,
     month: false,
+    year: true,
   });
 }
 
@@ -58,11 +60,13 @@ function testBuildPayloadPartialBaseline() {
     day: 0,
     week: 20,
     month: 20,
+    year: 20,
   });
   assert.deepEqual(payload.partial, {
     day: true,
     week: true,
     month: true,
+    year: true,
   });
   assert.equal(payload.profile.defaultMode, "hourly");
 }
@@ -90,6 +94,7 @@ function testDeltaClamp() {
     day: 0,
     week: 0,
     month: 0,
+    year: 0,
   });
 }
 
@@ -144,17 +149,17 @@ function testParseActionInputs() {
     GITHUB_REPOSITORY: "x/y",
     INPUT_WINDOW_DAYS: "45",
     INPUT_ENABLE_HOURLY_PROFILE: "false",
-    INPUT_OUTPUT_BRANCH: "gh-pages",
-    INPUT_OUTPUT_PATH: "gh-dl/downloads.json",
+    INPUT_OUTPUT_BRANCH: "stats-data",
+    INPUT_OUTPUT_PATH: "curseforge/downloads.json",
     INPUT_MIN_REFRESH_MINUTES: "30",
   });
 
   assert.equal(parsed.minRefreshMinutes, 30);
   assert.equal(parsed.publishChart, false);
-  assert.equal(parsed.chartOutputPath, "gh-dl/downloads-trend.svg");
+  assert.equal(parsed.chartOutputPath, "curseforge/downloads-trend.svg");
   assert.deepEqual(parsed.chartTypes, ["total-trend"]);
   assert.deepEqual(parsed.chartThemes, ["slate"]);
-  assert.equal(parsed.chartsOutputDir, "gh-dl/charts");
+  assert.equal(parsed.chartsOutputDir, "curseforge/charts");
   assert.equal(parsed.chartWidth, 1000);
   assert.equal(parsed.chartHeight, 360);
   assert.equal(parsed.chartZeroBaseline, true);
@@ -173,8 +178,8 @@ function testRejectsChartOutputCollision() {
       parseActionInputs({
         GITHUB_REPOSITORY: "x/y",
         INPUT_PUBLISH_CHART: "true",
-        INPUT_OUTPUT_PATH: "gh-dl/downloads.json",
-        INPUT_CHART_OUTPUT_PATH: "gh-dl/downloads.json",
+        INPUT_OUTPUT_PATH: "curseforge/downloads.json",
+        INPUT_CHART_OUTPUT_PATH: "curseforge/downloads.json",
       }),
     /overlaps chart output files/,
   );
@@ -193,7 +198,7 @@ function testBuildTrendChartSvg() {
 
   assert.match(svg, /<svg/);
   assert.match(svg, /Latest total: 120/);
-  assert.match(svg, /x\/y release downloads/);
+  assert.match(svg, /x\/y downloads/);
 }
 
 function testBuildChartSvgVariants() {
@@ -227,6 +232,24 @@ function testBuildChartSvgVariants() {
   assert.match(svg, /Custom heading demo/);
 }
 
+function testBuildChartSvgYearly() {
+  const svg = buildChartSvg({
+    owner: "x",
+    repo: "y",
+    generatedAt: "2026-02-18T10:00:00.000Z",
+    chartType: "yearly",
+    chartTheme: "slate",
+    series: {
+      "2026-02-15": 40000,
+      "2026-02-17": 40500,
+      "2026-02-18": 41000,
+    },
+  });
+
+  assert.match(svg, /Latest year: 1,000/);
+  assert.match(svg, /<svg/);
+}
+
 function testBuildChartSvgHidesDateLabelsWhenDisabled() {
   const svg = buildChartSvg({
     owner: "x",
@@ -255,6 +278,7 @@ function run() {
   testRejectsChartOutputCollision();
   testBuildTrendChartSvg();
   testBuildChartSvgVariants();
+  testBuildChartSvgYearly();
   testBuildChartSvgHidesDateLabelsWhenDisabled();
   console.log("compat checks passed");
 }

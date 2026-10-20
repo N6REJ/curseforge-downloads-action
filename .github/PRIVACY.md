@@ -2,23 +2,23 @@
 
 Last updated: February 21, 2026
 
-This notice explains how `justagwas/github-downloads-action` handles data.
+This notice explains how `N6REJ/curseforge-downloads-action` handles data.
 
 ## Short version
 
-- This action reads repository release metadata from GitHub.
+- This action reads mod download statistics from the CurseForge API.
 - It writes aggregated download stats (and optional charts) back to your repository.
 - It is not designed to collect personal data.
 - No external analytics or ad tracking is built into this action.
 
 ## What this action reads
 
-When the workflow runs, it uses a GitHub token to call GitHub APIs for:
+When the workflow runs, it:
 
-- repository metadata (owner/repo, branch info, visibility)
-- releases and release assets
-- release asset `download_count` values
-- existing output files in the configured output branch/path
+- calls the CurseForge API (`api.curseforge.com`) with your CurseForge API key to read the mod metadata and lifetime `downloadCount` for the configured `curseforge_mod_id`
+- uses a GitHub token to call GitHub APIs for:
+  - repository metadata (owner/repo, branch info, visibility)
+  - existing output files in the configured output branch/path
 
 ## What this action writes
 
@@ -46,7 +46,7 @@ Data retention is controlled by your repository:
 
 ## Third-party services
 
-This action runs on GitHub Actions infrastructure and uses GitHub APIs. Their handling of data is governed by GitHub policies and your repository settings.
+This action runs on GitHub Actions infrastructure, uses the GitHub APIs, and calls the CurseForge API. Their handling of data is governed by the respective GitHub and CurseForge policies and your repository settings.
 
 ## Your responsibilities
 
@@ -58,4 +58,4 @@ If you use this action, you are responsible for:
 
 ## Contact
 
-For privacy-related questions about this action, open an issue or follow the shared [Support Policy](https://github.com/Justagwas/.github/blob/main/SUPPORT.md).
+For privacy-related questions about this action, open an issue at <https://github.com/N6REJ/curseforge-downloads-action/issues>.

@@ -1,9 +1,9 @@
 ---
 name: Feature request
-about: Suggest an improvement for github-downloads-action
+about: Suggest an improvement for curseforge-downloads-action
 title: "[Feature]: "
 labels: enhancement
-assignees: Justagwas
+assignees: N6REJ
 ---
 
 ## Problem

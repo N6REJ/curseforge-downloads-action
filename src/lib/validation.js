@@ -101,7 +101,7 @@ function validateChartPathConflicts({
   const matrixPaths = buildMatrixChartPaths(chartTypes, chartThemes, chartsOutputDir);
   if (outputPath === chartOutputPath || matrixPaths.includes(outputPath)) {
     throw new Error(
-      `Invalid chart configuration: 'output_path' (${outputPath}) overlaps chart output files. Use a dedicated JSON path (for example 'gh-dl/downloads.json') and keep chart files under 'chart_output_path'/'charts_output_dir'.`,
+      `Invalid chart configuration: 'output_path' (${outputPath}) overlaps chart output files. Use a dedicated JSON path (for example 'curseforge/downloads.json') and keep chart files under 'chart_output_path'/'charts_output_dir'.`,
     );
   }
 }
@@ -192,6 +192,8 @@ function parseActionInputs(env = process.env) {
   const tokenInput = getInput(env, "token");
   const ownerInput = getInput(env, "owner");
   const repoInput = getInput(env, "repo");
+  const curseforgeModIdInput = getInput(env, "curseforge_mod_id");
+  const cfApiKeyInput = getInput(env, "cf_api_key");
   const windowDaysInput = getInput(env, "window_days");
   const hourlyInput = getInput(env, "enable_hourly_profile");
   const branchInput = getInput(env, "output_branch");
@@ -212,12 +214,18 @@ function parseActionInputs(env = process.env) {
   const chartShowGeneratedAtInput = getInput(env, "chart_show_generated_at");
   const chartTitleModeInput = getInput(env, "chart_title_mode");
   const chartTitleTextInput = getInput(env, "chart_title_text");
+  const publishDashboardInput = getInput(env, "publish_dashboard");
+  const dashboardPathInput = getInput(env, "dashboard_path");
 
   const { owner, repo } = parseOwnerRepo(env, ownerInput, repoInput);
-  const windowDays = parseInteger(windowDaysInput, "window_days", 45, 1, 3650);
+  const curseforgeModId =
+    curseforgeModIdInput === ""
+      ? null
+      : parseInteger(curseforgeModIdInput, "curseforge_mod_id", 0, 1, 2_147_483_647);
+  const windowDays = parseInteger(windowDaysInput, "window_days", 365, 1, 3650);
   const hourlyEnabled = parseBoolean(hourlyInput, "enable_hourly_profile", false);
-  const outputBranch = validateBranch(branchInput || "gh-pages");
-  const outputPath = validateOutputPath(outputPathInput || "gh-dl/downloads.json");
+  const outputBranch = validateBranch(branchInput || "stats-data");
+  const outputPath = validateOutputPath(outputPathInput || "curseforge/downloads.json");
   const minRefreshMinutes = parseInteger(
     minRefreshMinutesInput,
     "min_refresh_minutes",
@@ -226,10 +234,10 @@ function parseActionInputs(env = process.env) {
     10_080,
   );
   const publishChart = parseBoolean(publishChartInput, "publish_chart", false);
-  const chartOutputPath = validateOutputPath(chartOutputPathInput || "gh-dl/downloads-trend.svg");
+  const chartOutputPath = validateOutputPath(chartOutputPathInput || "curseforge/downloads-trend.svg");
   const chartTypes = parseCsvList(chartTypesInput, "chart_types", ["total-trend"], CHART_TYPES);
   const chartThemes = parseCsvList(chartThemesInput, "chart_themes", ["slate"], CHART_THEMES);
-  const chartsOutputDir = validateOutputPath(chartsOutputDirInput || "gh-dl/charts");
+  const chartsOutputDir = validateOutputPath(chartsOutputDirInput || "curseforge/charts");
   const chartWidth = parseInteger(chartWidthInput, "chart_width", 1000, 640, 4096);
   const chartHeight = parseInteger(chartHeightInput, "chart_height", 360, 240, 2160);
   const chartZeroBaseline = parseBoolean(chartZeroBaselineInput, "chart_zero_baseline", true);
@@ -283,10 +291,20 @@ function parseActionInputs(env = process.env) {
     chartsOutputDir,
   });
 
+  const publishDashboard = parseBoolean(publishDashboardInput, "publish_dashboard", true);
+  const dashboardPath = validateOutputPath(dashboardPathInput || "curseforge/dashboard.md");
+  if (publishDashboard && dashboardPath === outputPath) {
+    throw new Error(
+      `Invalid dashboard configuration: 'dashboard_path' (${dashboardPath}) must differ from 'output_path' (${outputPath}).`,
+    );
+  }
+
   return {
     token: tokenInput,
     owner,
     repo,
+    curseforgeModId,
+    cfApiKey: cfApiKeyInput,
     windowDays,
     hourlyEnabled,
     outputBranch,
@@ -307,6 +325,8 @@ function parseActionInputs(env = process.env) {
     chartShowGeneratedAt,
     chartTitleMode,
     chartTitleText,
+    publishDashboard,
+    dashboardPath,
   };
 }
 

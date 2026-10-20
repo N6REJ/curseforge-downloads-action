@@ -104,7 +104,7 @@ function createGitHubClient(token) {
               Authorization: `Bearer ${token}`,
               Accept: "application/vnd.github+json",
               "Content-Type": "application/json",
-              "User-Agent": "justagwas/github-downloads-action",
+              "User-Agent": "N6REJ/curseforge-downloads-action",
               "X-GitHub-Api-Version": "2022-11-28",
             },
             body: body ? JSON.stringify(body) : undefined,
@@ -169,41 +169,6 @@ function createGitHubClient(token) {
 
   async function getRepository(owner, repo) {
     return request("GET", `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`);
-  }
-
-  async function getReleaseDownloadsTotal(owner, repo) {
-    let page = 1;
-    let total = 0;
-
-    while (true) {
-      const releases = await request(
-        "GET",
-        `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/releases`,
-        { query: { per_page: 100, page } },
-      );
-
-      if (!Array.isArray(releases)) {
-        throw new Error("Unexpected GitHub API response for releases list.");
-      }
-
-      for (const release of releases) {
-        const assets = Array.isArray(release.assets) ? release.assets : [];
-        for (const asset of assets) {
-          const downloads = Number(asset.download_count);
-          if (Number.isFinite(downloads) && downloads > 0) {
-            total += Math.floor(downloads);
-          }
-        }
-      }
-
-      if (releases.length < 100) break;
-      page += 1;
-      if (page > 1000) {
-        throw new Error("Release pagination exceeded safety limit (1000 pages).");
-      }
-    }
-
-    return total;
   }
 
   async function getRef(owner, repo, branch, allowNotFound = false) {
@@ -286,7 +251,6 @@ function createGitHubClient(token) {
     ensureBranch,
     getFile,
     getRepository,
-    getReleaseDownloadsTotal,
     putFile,
   };
 }

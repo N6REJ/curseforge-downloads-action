@@ -2,6 +2,7 @@
 
 const { buildPayload, formatDateUTC, mergeSnapshots } = require("./compute");
 const { buildChartSvg } = require("./chart");
+const { buildDashboardMarkdown, hasWindowRow } = require("./dashboard");
 const { getFreshCachedTotal } = require("./cache");
 const {
   extractPreviousSeries,
@@ -11,10 +12,10 @@ const {
   parseJsonOrNull,
 } = require("./change-utils");
 
-async function publishPayload({ client, inputs, repoMeta, now, logger }) {
+async function publishPayload({ client, curseForgeClient, inputs, repoMeta, now, logger }) {
   const todayDate = formatDateUTC(now);
   const generatedAt = now.toISOString();
-  const commitMessage = `chore(gh-dl): update downloads snapshot for ${inputs.owner}/${inputs.repo} (${todayDate})`;
+  const commitMessage = `chore(curseforge): update downloads snapshot for ${inputs.owner}/${inputs.repo} (${todayDate})`;
 
   const maxPublishAttempts = 4;
   let payload = null;
@@ -49,7 +50,7 @@ async function publishPayload({ client, inputs, repoMeta, now, logger }) {
         total = cachedTotal;
         totalSource = "cache";
       } else {
-        total = await client.getReleaseDownloadsTotal(inputs.owner, inputs.repo);
+        total = await curseForgeClient.getDownloadsTotal(inputs.curseforgeModId);
         totalSource = "api";
       }
     }
@@ -224,7 +225,59 @@ async function publishChartIfEnabled({ client, inputs, payload, commitMessage, l
   };
 }
 
+async function publishDashboardIfEnabled({ client, inputs, payload, commitMessage, logger }) {
+  if (!inputs.publishDashboard) {
+    return { published: false, path: inputs.dashboardPath };
+  }
+
+  const markdown = buildDashboardMarkdown({ inputs, payload });
+  const maxAttempts = 4;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    const previousFile = await client.getFile(
+      inputs.owner,
+      inputs.repo,
+      inputs.dashboardPath,
+      inputs.outputBranch,
+    );
+
+    if (previousFile?.content != null && !hasWindowRow(previousFile.content)) {
+      logger.warn(
+        `Skipping dashboard update for ${inputs.outputBranch}:${inputs.dashboardPath}: existing file is missing the window row.`,
+      );
+      return { published: false, path: inputs.dashboardPath };
+    }
+
+    if (!hasTextChange(previousFile?.content, markdown)) {
+      return { published: false, path: inputs.dashboardPath };
+    }
+
+    try {
+      await client.putFile(
+        inputs.owner,
+        inputs.repo,
+        inputs.dashboardPath,
+        inputs.outputBranch,
+        markdown,
+        `${commitMessage} [dashboard]`,
+        previousFile?.sha,
+      );
+      return { published: true, path: inputs.dashboardPath };
+    } catch (error) {
+      if (attempt >= maxAttempts || !isRetryableWriteConflict(error)) {
+        throw error;
+      }
+      logger.warn(
+        `Detected concurrent write for ${inputs.outputBranch}:${inputs.dashboardPath}. Retrying dashboard publish (${attempt}/${maxAttempts}).`,
+      );
+    }
+  }
+
+  throw new Error("Failed to publish dashboard after retries.");
+}
+
 module.exports = {
   publishPayload,
   publishChartIfEnabled,
+  publishDashboardIfEnabled,
 };

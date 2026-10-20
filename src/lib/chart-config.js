@@ -1,6 +1,6 @@
 "use strict";
 
-const CHART_TYPES = ["total-trend", "daily", "weekly", "monthly"];
+const CHART_TYPES = ["total-trend", "daily", "weekly", "monthly", "yearly"];
 const CHART_THEMES = ["black", "slate", "orange"];
 const CHART_DATE_LABEL_FORMATS = ["yyyy-mm-dd", "yy/mm/dd", "dd/mm", "mm/dd", "none"];
 const CHART_TITLE_MODES = ["default", "custom", "none"];
@@ -21,6 +21,10 @@ const CHART_TYPE_META = {
   monthly: {
     latestLabel: "Latest month",
     rangeDays: 30,
+  },
+  yearly: {
+    latestLabel: "Latest year",
+    rangeDays: 365,
   },
 };
 

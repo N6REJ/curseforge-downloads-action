@@ -1,6 +1,6 @@
-name: "GitHub Downloads Action"
-description: "Track release downloads with a GitHub Action that writes badge-ready JSON and optional SVG charts."
-author: "justagwas"
+name: "CurseForge Downloads Action"
+description: "Track CurseForge mod downloads with a GitHub Action that writes badge-ready JSON and optional SVG charts."
+author: "N6REJ"
 
 inputs:
   token:
@@ -12,10 +12,16 @@ inputs:
   repo:
     description: "Target repository name. Defaults to the current workflow repository name."
     required: false
+  curseforge_mod_id:
+    description: "CurseForge mod (project) ID whose download total should be tracked."
+    required: true
+  cf_api_key:
+    description: "CurseForge API key. Pass secrets.CF_API_KEY."
+    required: false
   window_days:
     description: "Rolling snapshot window length in days."
     required: false
-    default: "45"
+    default: "365"
   enable_hourly_profile:
     description: "When true, marks profile.defaultMode as hourly."
     required: false
@@ -23,11 +29,11 @@ inputs:
   output_branch:
     description: "Branch where downloads JSON should be written."
     required: false
-    default: "gh-pages"
+    default: "stats-data"
   output_path:
     description: "Path (within output_branch) for downloads JSON."
     required: false
-    default: "gh-dl/downloads.json"
+    default: "curseforge/downloads.json"
   min_refresh_minutes:
     description: "Optional cache window. When >0, reuse the previous total if it was generated within this many minutes."
     required: false
@@ -39,9 +45,9 @@ inputs:
   chart_output_path:
     description: "Path (within output_branch) for the primary chart SVG."
     required: false
-    default: "gh-dl/downloads-trend.svg"
+    default: "curseforge/downloads-trend.svg"
   chart_types:
-    description: "Comma-separated chart types: total-trend,daily,weekly,monthly."
+    description: "Comma-separated chart types: total-trend,daily,weekly,monthly,yearly."
     required: false
     default: "total-trend"
   chart_themes:
@@ -51,7 +57,7 @@ inputs:
   charts_output_dir:
     description: "Directory (within output_branch) for generated chart matrix files."
     required: false
-    default: "gh-dl/charts"
+    default: "curseforge/charts"
   chart_width:
     description: "Chart width in pixels."
     required: false
@@ -92,6 +98,14 @@ inputs:
     description: "Custom chart title text (required when chart_title_mode=custom)."
     required: false
     default: ""
+  publish_dashboard:
+    description: "When true, publishes a README-style dashboard Markdown file built from the current stats."
+    required: false
+    default: "true"
+  dashboard_path:
+    description: "Path (within output_branch) for the dashboard Markdown file."
+    required: false
+    default: "curseforge/dashboard.md"
 
 outputs:
   owner:
@@ -101,21 +115,25 @@ outputs:
   generated_at:
     description: "ISO-8601 UTC generation timestamp."
   total:
-    description: "Computed total release asset downloads."
+    description: "Computed CurseForge mod downloads."
   day:
     description: "Computed day delta."
   week:
     description: "Computed week delta."
   month:
     description: "Computed month delta."
+  year:
+    description: "Computed rolling 365-day delta."
   partial_day:
     description: "Whether day value is partial."
   partial_week:
     description: "Whether week value is partial."
   partial_month:
     description: "Whether month value is partial."
+  partial_year:
+    description: "Whether year value is partial."
   total_source:
-    description: "Whether total came from GitHub API or a fresh cached value."
+    description: "Whether total came from the CurseForge API or a fresh cached value."
   chart_output_path:
     description: "Chart output path used."
   chart_published:
@@ -126,6 +144,10 @@ outputs:
     description: "Number of chart SVG files targeted in this run."
   chart_files:
     description: "Comma-separated list of generated chart paths."
+  dashboard_path:
+    description: "Dashboard Markdown path used."
+  dashboard_published:
+    description: "Whether the dashboard Markdown file was updated in this run."
   output_branch:
     description: "Output branch used."
   output_path:
@@ -134,7 +156,7 @@ outputs:
     description: "Whether downloads.json was updated in this run."
 
 runs:
-  using: "node20"
+  using: "node24"
   main: "src/index.js"
 
 branding:

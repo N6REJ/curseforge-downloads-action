@@ -1,6 +1,6 @@
-# Contributing to github-downloads-action
+# Contributing to curseforge-downloads-action
 
-Thanks for your interest in contributing to `github-downloads-action`.
+Thanks for your interest in contributing to `curseforge-downloads-action`.
 
 ## Before You Start
 
@@ -47,4 +47,4 @@ git checkout -b feature/short-name
 - Preserve existing behavior unless intentionally changing it.
 - Update docs when behavior or setup changes.
 
-Thanks for helping improve `github-downloads-action`.
+Thanks for helping improve `curseforge-downloads-action`.

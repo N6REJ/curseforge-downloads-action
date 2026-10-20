@@ -62,9 +62,9 @@ function buildTitle(owner, repo, titleMode, customTitle) {
   if (titleMode === "none") return "";
   if (titleMode === "custom") {
     const trimmed = String(customTitle || "").trim();
-    return trimmed || `${owner}/${repo} release downloads`;
+    return trimmed || `${owner}/${repo} downloads`;
   }
-  return `${owner}/${repo} release downloads`;
+  return `${owner}/${repo} downloads`;
 }
 
 function shiftDate(dateString, daysAgo) {

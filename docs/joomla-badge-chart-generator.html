@@ -1,0 +1,304 @@
+<!--
+  CurseForge Downloads Action - Joomla badge & chart generator
+  ------------------------------------------------------------------
+  Paste this entire block into a Joomla "Custom HTML" module (Code/Source view)
+  or into an article editor set to Code view. See:
+    docs/joomla-badge-chart-generator.md
+
+  No external scripts, no inline event handlers, no secrets.
+  Defaults match the action's defaults:
+    branch            stats-data
+    JSON path         curseforge/downloads.json
+    primary chart     curseforge/downloads-trend.svg
+    chart matrix dir  curseforge/charts
+-->
+<div class="cfdg" id="cfdg-root">
+  <p class="cfdg-intro">
+    Generate a copy-paste badge or chart for a repository that already publishes
+    CurseForge download stats with
+    <a href="https://github.com/N6REJ/curseforge-downloads-action" target="_blank" rel="noopener">curseforge-downloads-action</a>.
+  </p>
+
+  <form class="cfdg-form" id="cfdg-form" autocomplete="off">
+    <div class="cfdg-row">
+      <label class="cfdg-field">
+        <span>Owner</span>
+        <input type="text" id="cfdg-owner" value="N6REJ" spellcheck="false" />
+      </label>
+      <label class="cfdg-field">
+        <span>Repository</span>
+        <input type="text" id="cfdg-repo" value="curseforge-downloads-action" spellcheck="false" />
+      </label>
+      <label class="cfdg-field">
+        <span>Branch</span>
+        <input type="text" id="cfdg-branch" value="stats-data" spellcheck="false" />
+      </label>
+    </div>
+
+    <div class="cfdg-row">
+      <label class="cfdg-field">
+        <span>JSON path</span>
+        <input type="text" id="cfdg-jsonpath" value="curseforge/downloads.json" spellcheck="false" />
+      </label>
+      <label class="cfdg-field">
+        <span>Primary chart path</span>
+        <input type="text" id="cfdg-chartpath" value="curseforge/downloads-trend.svg" spellcheck="false" />
+      </label>
+      <label class="cfdg-field">
+        <span>Chart matrix dir</span>
+        <input type="text" id="cfdg-chartdir" value="curseforge/charts" spellcheck="false" />
+      </label>
+    </div>
+
+    <fieldset class="cfdg-group">
+      <legend>Badge</legend>
+      <div class="cfdg-row">
+        <label class="cfdg-field">
+          <span>Metric</span>
+          <select id="cfdg-metric">
+            <option value="total|$.stats.total|0A7EA4">Total</option>
+            <option value="day|$.stats.day|1E8E3E">Day</option>
+            <option value="week|$.stats.week|0069C2">Week</option>
+            <option value="month|$.stats.month|B26A00">Month</option>
+            <option value="year|$.stats.year|6A1B9A">Year</option>
+            <option value="profile|$.profile.defaultMode|5E35B1">Profile mode</option>
+          </select>
+        </label>
+        <label class="cfdg-field">
+          <span>Label</span>
+          <input type="text" id="cfdg-label" value="downloads/total" spellcheck="false" />
+        </label>
+        <label class="cfdg-field">
+          <span>Color (hex, no #)</span>
+          <input type="text" id="cfdg-color" value="0A7EA4" spellcheck="false" maxlength="6" />
+        </label>
+      </div>
+    </fieldset>
+
+    <fieldset class="cfdg-group">
+      <legend>Chart</legend>
+      <div class="cfdg-row">
+        <label class="cfdg-field">
+          <span>Chart type</span>
+          <select id="cfdg-charttype">
+            <option value="total-trend">total-trend</option>
+            <option value="daily">daily</option>
+            <option value="weekly">weekly</option>
+            <option value="monthly">monthly</option>
+            <option value="yearly">yearly</option>
+          </select>
+        </label>
+        <label class="cfdg-field">
+          <span>Theme</span>
+          <select id="cfdg-theme">
+            <option value="black">black</option>
+            <option value="slate" selected>slate</option>
+            <option value="orange">orange</option>
+          </select>
+        </label>
+        <label class="cfdg-field cfdg-check">
+          <input type="checkbox" id="cfdg-primary" />
+          <span>Use primary chart path (ignores type/theme)</span>
+        </label>
+      </div>
+    </fieldset>
+  </form>
+
+  <div class="cfdg-output">
+    <h3>Badge</h3>
+    <pre class="cfdg-code"><code id="cfdg-badge-md"></code></pre>
+    <div class="cfdg-actions">
+      <button type="button" class="cfdg-btn" data-copy="cfdg-badge-md">Copy badge Markdown</button>
+      <button type="button" class="cfdg-btn" data-copy="cfdg-badge-url">Copy badge URL</button>
+    </div>
+    <pre class="cfdg-code cfdg-url"><code id="cfdg-badge-url"></code></pre>
+    <div class="cfdg-preview"><img id="cfdg-badge-img" alt="Badge preview" /></div>
+
+    <h3>Chart</h3>
+    <pre class="cfdg-code"><code id="cfdg-chart-md"></code></pre>
+    <div class="cfdg-actions">
+      <button type="button" class="cfdg-btn" data-copy="cfdg-chart-md">Copy chart Markdown</button>
+      <button type="button" class="cfdg-btn" data-copy="cfdg-chart-url">Copy chart URL</button>
+    </div>
+    <pre class="cfdg-code cfdg-url"><code id="cfdg-chart-url"></code></pre>
+    <div class="cfdg-preview"><img id="cfdg-chart-img" alt="Chart preview" /></div>
+  </div>
+
+  <p class="cfdg-status" id="cfdg-status" role="status" aria-live="polite"></p>
+</div>
+
+<style>
+  .cfdg { max-width: 900px; margin: 0 auto; font: 15px/1.5 system-ui, Segoe UI, Arial, sans-serif; color: #1f2933; }
+  .cfdg a { color: #0a7ea4; }
+  .cfdg .cfdg-intro { margin: 0 0 1rem; }
+  .cfdg .cfdg-form { display: block; }
+  .cfdg .cfdg-group { border: 1px solid #d9e2ec; border-radius: 10px; padding: .75rem 1rem 1rem; margin: 0 0 1rem; }
+  .cfdg .cfdg-group legend { padding: 0 .4rem; font-weight: 600; color: #486581; }
+  .cfdg .cfdg-row { display: flex; flex-wrap: wrap; gap: .75rem 1rem; margin: .4rem 0; }
+  .cfdg .cfdg-field { display: flex; flex-direction: column; flex: 1 1 200px; gap: .25rem; }
+  .cfdg .cfdg-field span { font-size: .8rem; color: #52606d; }
+  .cfdg .cfdg-field input[type="text"], .cfdg .cfdg-field select {
+    padding: .5rem .6rem; border: 1px solid #bcccdc; border-radius: 8px; font: inherit; background: #fff; color: inherit;
+  }
+  .cfdg .cfdg-check { flex-direction: row; align-items: center; gap: .5rem; flex: 1 1 100%; }
+  .cfdg .cfdg-check span { font-size: .85rem; color: #52606d; }
+  .cfdg .cfdg-output h3 { margin: 1.2rem 0 .4rem; font-size: 1rem; color: #243b53; }
+  .cfdg .cfdg-code { background: #f0f4f8; border: 1px solid #d9e2ec; border-radius: 8px; padding: .6rem .75rem; overflow-x: auto; white-space: pre-wrap; word-break: break-all; margin: 0 0 .5rem; }
+  .cfdg .cfdg-code code { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: .82rem; color: #102a43; }
+  .cfdg .cfdg-url { opacity: .85; }
+  .cfdg .cfdg-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin: 0 0 .75rem; }
+  .cfdg .cfdg-btn { cursor: pointer; border: 1px solid #0a7ea4; background: #0a7ea4; color: #fff; border-radius: 8px; padding: .45rem .8rem; font: inherit; }
+  .cfdg .cfdg-btn:hover { background: #086587; }
+  .cfdg .cfdg-preview { margin: 0 0 .5rem; }
+  .cfdg .cfdg-preview img { max-width: 100%; height: auto; }
+  .cfdg .cfdg-status { min-height: 1.2rem; font-size: .85rem; color: #1e8e3e; }
+  .cfdg .cfdg-status.cfdg-error { color: #b3261e; }
+</style>
+
+<script>
+  (function () {
+    "use strict";
+
+    var CFDG = document.getElementById("cfdg-root");
+    if (!CFDG) return;
+
+    var SAFE_SLUG = /^[A-Za-z0-9_.-]+$/;
+    var SAFE_PATH = /^[A-Za-z0-9_.\-\/]+$/;
+    var SAFE_COLOR = /^[0-9A-Fa-f]{6}$/;
+
+    function el(id) { return document.getElementById(id); }
+
+    function value(id, fallback) {
+      var node = el(id);
+      return node && typeof node.value === "string" ? node.value.trim() : fallback;
+    }
+
+    function sanitizeSlug(text, fallback) {
+      return SAFE_SLUG.test(text) ? text : fallback;
+    }
+
+    function sanitizePath(text, fallback) {
+      var normalized = text.replace(/\\/g, "/").replace(/^\/+/, "");
+      if (normalized.indexOf("..") !== -1) return fallback;
+      return SAFE_PATH.test(normalized) ? normalized : fallback;
+    }
+
+    function sanitizeColor(text, fallback) {
+      return SAFE_COLOR.test(text) ? text.toUpperCase() : fallback;
+    }
+
+    function encode(text) { return encodeURIComponent(text); }
+
+    function rawBase(owner, repo, branch) {
+      return "https://raw.githubusercontent.com/" + owner + "/" + repo + "/" + branch;
+    }
+
+    function badgeUrl(owner, repo, branch, jsonPath, query, label, color) {
+      var source = rawBase(owner, repo, branch) + "/" + jsonPath;
+      return "https://img.shields.io/badge/dynamic/json?url=" + encode(source) +
+        "&query=" + encode(query) +
+        "&label=" + encode(label) +
+        "&color=" + color +
+        "&style=flat-square&logo=curseforge&cacheSeconds=900";
+    }
+
+    function chartUrl(owner, repo, branch, path) {
+      return rawBase(owner, repo, branch) + "/" + path;
+    }
+
+    function render() {
+      var owner = sanitizeSlug(value("cfdg-owner", ""), "OWNER");
+      var repo = sanitizeSlug(value("cfdg-repo", ""), "REPOSITORY");
+      var branch = sanitizeSlug(value("cfdg-branch", ""), "stats-data");
+      var jsonPath = sanitizePath(value("cfdg-jsonpath", ""), "curseforge/downloads.json");
+      var primaryPath = sanitizePath(value("cfdg-chartpath", ""), "curseforge/downloads-trend.svg");
+      var chartDir = sanitizePath(value("cfdg-chartdir", ""), "curseforge/charts");
+
+      var metricParts = value("cfdg-metric", "total|$.stats.total|0A7EA4").split("|");
+      var defaultQuery = metricParts[1] || "$.stats.total";
+      var defaultColor = metricParts[2] || "0A7EA4";
+      var query = value("cfdg-label", "") ? defaultQuery : defaultQuery;
+      var label = value("cfdg-label", "downloads/total") || ("downloads/" + metricParts[0]);
+      var color = sanitizeColor(value("cfdg-color", ""), defaultColor);
+
+      var badge = badgeUrl(owner, repo, branch, jsonPath, query, label, color);
+
+      var chartType = value("cfdg-charttype", "total-trend");
+      var theme = value("cfdg-theme", "slate");
+      var usePrimary = el("cfdg-primary") && el("cfdg-primary").checked;
+      var chartTarget = usePrimary
+        ? primaryPath
+        : chartDir + "/" + chartType + "--" + theme + ".svg";
+      var chart = chartUrl(owner, repo, branch, chartTarget);
+
+      var badgeMd = "![" + label + "](" + badge + ")";
+      var chartMd = "![Downloads " + chartType + " " + theme + "](" + chart + ")";
+
+      el("cfdg-badge-md").textContent = badgeMd;
+      el("cfdg-badge-url").textContent = badge;
+      el("cfdg-badge-img").src = badge;
+
+      el("cfdg-chart-md").textContent = chartMd;
+      el("cfdg-chart-url").textContent = chart;
+      el("cfdg-chart-img").src = chart;
+    }
+
+    function setStatus(message, isError) {
+      var node = el("cfdg-status");
+      if (!node) return;
+      node.textContent = message;
+      node.className = "cfdg-status" + (isError ? " cfdg-error" : "");
+      if (message) {
+        window.setTimeout(function () {
+          if (node.textContent === message) {
+            node.textContent = "";
+            node.className = "cfdg-status";
+          }
+        }, 2500);
+      }
+    }
+
+    function copyFrom(sourceId) {
+      var source = el(sourceId);
+      if (!source) return;
+      var text = source.textContent || "";
+
+      function done(ok) { setStatus(ok ? "Copied to clipboard." : "Copy failed; select and copy manually.", !ok); }
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () { done(true); }, function () { fallbackCopy(text, done); });
+      } else {
+        fallbackCopy(text, done);
+      }
+    }
+
+    function fallbackCopy(text, done) {
+      try {
+        var area = document.createElement("textarea");
+        area.value = text;
+        area.setAttribute("readonly", "");
+        area.style.position = "fixed";
+        area.style.top = "-1000px";
+        document.body.appendChild(area);
+        area.select();
+        var ok = document.execCommand("copy");
+        document.body.removeChild(area);
+        done(ok);
+      } catch (error) {
+        done(false);
+      }
+    }
+
+    CFDG.addEventListener("input", render);
+    CFDG.addEventListener("change", render);
+
+    var copyButtons = CFDG.querySelectorAll("[data-copy]");
+    for (var i = 0; i < copyButtons.length; i += 1) {
+      copyButtons[i].addEventListener("click", function () {
+        copyFrom(this.getAttribute("data-copy"));
+      });
+    }
+
+    render();
+  }());
+</script>

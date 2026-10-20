@@ -94,6 +94,7 @@ function computeStats(total, series, todayDate) {
   const day = computeRange(total, series, todayDate, 1);
   const week = computeRange(total, series, todayDate, 7);
   const month = computeRange(total, series, todayDate, 30);
+  const year = computeRange(total, series, todayDate, 365);
 
   return {
     stats: {
@@ -101,11 +102,13 @@ function computeStats(total, series, todayDate) {
       day: day.value,
       week: week.value,
       month: month.value,
+      year: year.value,
     },
     partial: {
       day: day.partial,
       week: week.partial,
       month: month.partial,
+      year: year.partial,
     },
   };
 }

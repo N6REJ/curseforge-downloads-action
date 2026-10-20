@@ -1,9 +1,9 @@
 ---
 name: Bug report
-about: Report a problem in github-downloads-action
+about: Report a problem in curseforge-downloads-action
 title: "[Bug]: "
 labels: bug
-assignees: Justagwas
+assignees: N6REJ
 ---
 
 ## Description

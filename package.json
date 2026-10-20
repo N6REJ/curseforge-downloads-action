@@ -1,8 +1,8 @@
 {
-  "name": "github-downloads-action",
+  "name": "curseforge-downloads-action",
   "version": "1.0.1",
   "private": true,
-  "description": "Track release downloads with a GitHub Action that writes badge-ready JSON and optional SVG charts.",
+  "description": "Track CurseForge mod downloads with a GitHub Action that writes badge-ready JSON and optional SVG charts.",
   "main": "src/index.js",
   "scripts": {
     "lint:style": "node scripts/style-check.js",
@@ -10,7 +10,7 @@
     "check:release": "node scripts/release-check.js"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=24"
   },
   "license": "Apache-2.0"
 }

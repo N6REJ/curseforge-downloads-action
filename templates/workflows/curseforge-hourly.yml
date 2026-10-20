@@ -1,0 +1,33 @@
+name: curseforge-hourly
+
+on:
+  schedule:
+    - cron: "0 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: curseforge-${{ github.repository }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  publish-downloads:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: Publish downloads.json to stats-data (hourly profile)
+        uses: N6REJ/curseforge-downloads-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          curseforge_mod_id: "0000000"
+          cf_api_key: ${{ secrets.CF_API_KEY }}
+          window_days: "365"
+          enable_hourly_profile: "true"
+          output_branch: "stats-data"
+          output_path: "curseforge/downloads.json"
+          min_refresh_minutes: "0"
+          publish_chart: "false"
+          chart_output_path: "curseforge/downloads-trend.svg"

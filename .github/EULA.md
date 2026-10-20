@@ -1,8 +1,8 @@
-# End User License Agreement (Marketplace)
+# End User License Agreement
 
 Last updated: February 21, 2026
 
-This EULA applies to use of `justagwas/github-downloads-action` through GitHub Marketplace.
+This EULA applies to use of `N6REJ/curseforge-downloads-action`.
 
 ## 1. License grant
 
@@ -10,7 +10,7 @@ You are granted a non-exclusive license to use this action in your GitHub workfl
 
 - this EULA
 - the repository `LICENSE` file (Apache-2.0)
-- GitHub Terms and Marketplace policies
+- GitHub Terms of Service
 
 ## 2. Open source license still applies
 
@@ -20,7 +20,7 @@ If there is a conflict between this EULA and Apache-2.0 for code licensing, Apac
 
 ## 3. Support scope
 
-Support is provided on a best-effort basis under the shared [Support Policy](https://github.com/Justagwas/.github/blob/main/SUPPORT.md).
+Support is provided on a best-effort basis through the repository issue tracker at <https://github.com/N6REJ/curseforge-downloads-action/issues>.
 
 No guaranteed SLA, uptime, response time, or custom feature work is promised unless separately agreed in writing.
 
@@ -46,4 +46,4 @@ This EULA may be updated in future releases. Continued use after an update means
 
 ## 9. Contact
 
-For license or support questions, follow the shared [Support Policy](https://github.com/Justagwas/.github/blob/main/SUPPORT.md).
+For license or support questions, open an issue at <https://github.com/N6REJ/curseforge-downloads-action/issues>.
