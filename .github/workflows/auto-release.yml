@@ -3,11 +3,12 @@ name: auto-release
 on:
   push:
     tags:
-      - "v*.*.*"
+      - "20*.*.*"
+      - "20*.*.*.*"
   workflow_dispatch:
     inputs:
       tag:
-        description: "Tag to release"
+        description: "Tag to release (CalVer, e.g. 2026.10.20 or 2026.10.20.1)"
         required: true
         type: string
 
@@ -29,12 +30,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          npm test
-      - name: Run release sanity checks
-        shell: bash
-        run: |
-          set -euo pipefail
-          npm run check:release
+          node scripts/style-check.js
+          node scripts/release-check.js
+          node tests/run-tests.js
+          node compat/run-compat.js
 
   publish-release:
     needs:
@@ -70,6 +69,25 @@ jobs:
           else
             gh release create "$TAG" --repo "$REPOSITORY" --verify-tag --generate-notes
             echo "Created release for $TAG."
+          fi
+
+      - name: Move latest tag to released commit
+        if: ${{ steps.resolve.outputs.tag != '' }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          TAG: ${{ steps.resolve.outputs.tag }}
+        run: |
+          set -euo pipefail
+          sha="$(gh api "repos/$REPOSITORY/commits/$TAG" -q .sha)"
+          ref_name="tags/latest"
+          if gh api "repos/$REPOSITORY/git/ref/$ref_name" >/dev/null 2>&1; then
+            gh api --method PATCH "repos/$REPOSITORY/git/refs/$ref_name" -f sha="$sha" -F force=true >/dev/null
+            echo "Updated refs/$ref_name -> $sha ($TAG)"
+          else
+            gh api --method POST "repos/$REPOSITORY/git/refs" -f ref="refs/$ref_name" -f sha="$sha" >/dev/null
+            echo "Created refs/$ref_name -> $sha ($TAG)"
           fi
 
       - name: Fail when no tag was resolved

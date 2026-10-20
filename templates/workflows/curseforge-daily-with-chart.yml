@@ -19,7 +19,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
 
       - name: Publish downloads.json and trend chart to stats-data
-        uses: N6REJ/curseforge-downloads-action@v1
+        uses: N6REJ/curseforge-downloads-action@latest
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           curseforge_mod_id: "0000000"
