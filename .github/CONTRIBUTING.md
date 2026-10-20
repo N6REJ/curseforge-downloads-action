@@ -1,50 +1,30 @@
-# Contributing to github-downloads-action
+# Contributing to this project
 
-Thanks for your interest in contributing to `github-downloads-action`.
+Thank you for considering contributing to this project! Your help is greatly appreciated. Please follow these guidelines to help us maintain a healthy and productive community.
 
-## Before You Start
+## How to Contribute
 
-1. Read `README.md`.
-2. Search existing issues before opening a new one.
-3. Keep changes focused and easy to review.
+- **Report Bugs:** Use the issue tracker to report bugs. Please include as much detail as possible.
+- **Suggest Enhancements:** If you have ideas for improvements, open an issue and describe your suggestion.
+- **Submit Pull Requests:** Fork the repository, create a new branch, make your changes, and submit a pull request. Please describe your changes clearly.
 
-## Reporting Bugs
+## Pull Request Process
 
-Open a bug issue and include:
+1. Ensure any install or build dependencies are removed before the end of the layer when doing a build.
+2. Update the README.md with details of changes to the interface, this includes new environment variables, exposed ports, useful file locations, and container parameters.
+3. Increase the version numbers in any examples files and the README.md to the new version that this Pull Request would represent.
+4. You may merge the Pull Request in once you have the sign-off of two other developers, or if you do not have permission to do that, you may request the second reviewer to merge it for you.
 
-- What happened
-- Expected behavior
-- Reproduction steps
-- Action version (`v1.x.x` if relevant)
-- Workflow snippet used
-- Logs/screenshots
+## Coding Standards
 
-## Suggesting Features
+- Write clear, concise commit messages.
+- Follow the existing code style and conventions.
+- Add tests for new features or bug fixes when possible.
 
-Open a feature request and include:
+## Code of Conduct
 
-- Problem statement
-- Proposed solution
-- Why it helps users
-- Alternatives considered
+This project and everyone participating in it is governed by the [Code of Conduct](./CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code.
 
-## Pull Requests
+## Questions
 
-1. Fork the repository.
-2. Create a branch:
-
-```bash
-git checkout -b feature/short-name
-```
-
-3. Make and test your changes.
-4. Commit with a clear message.
-5. Open a pull request with a concise summary.
-
-## Code Guidelines
-
-- Keep changes scoped.
-- Preserve existing behavior unless intentionally changing it.
-- Update docs when behavior or setup changes.
-
-Thanks for helping improve `github-downloads-action`.
+If you have any questions, please open an issue or contact the maintainers.
