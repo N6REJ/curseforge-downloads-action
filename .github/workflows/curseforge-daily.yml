@@ -18,8 +18,10 @@ jobs:
   publish-downloads:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/checkout@v4
       - name: Publish downloads.json + charts to stats-data
         uses: ./
         with:
