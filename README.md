@@ -483,7 +483,7 @@ For the `v1` major line, the project follows these stability expectations:
 | `publish_chart` | No | `false` | boolean | When true, publishes static SVG charts |
 | `chart_output_path` | No | `curseforge/downloads-trend.svg` | string | Repo-relative path for the SVG chart |
 | `chart_types` | No | `total-trend` | csv | Chart types list: `total-trend,daily,weekly,monthly,yearly` |
-| `chart_themes` | No | `slate` | csv | Chart themes list: `black,slate,orange` |
+| `chart_themes` | No | `black` | csv | Chart themes list: `black,slate,orange` |
 | `charts_output_dir` | No | `curseforge/charts` | string | Repo-relative directory where matrix chart files are written |
 | `chart_width` | No | `1000` | integer | Chart width in pixels (`640..4096`) |
 | `chart_height` | No | `360` | integer | Chart height in pixels (`240..2160`) |

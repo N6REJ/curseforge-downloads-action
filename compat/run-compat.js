@@ -158,7 +158,7 @@ function testParseActionInputs() {
   assert.equal(parsed.publishChart, false);
   assert.equal(parsed.chartOutputPath, "curseforge/downloads-trend.svg");
   assert.deepEqual(parsed.chartTypes, ["total-trend"]);
-  assert.deepEqual(parsed.chartThemes, ["slate"]);
+  assert.deepEqual(parsed.chartThemes, ["black"]);
   assert.equal(parsed.chartsOutputDir, "curseforge/charts");
   assert.equal(parsed.chartWidth, 1000);
   assert.equal(parsed.chartHeight, 360);

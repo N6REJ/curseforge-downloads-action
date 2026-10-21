@@ -53,7 +53,7 @@ inputs:
   chart_themes:
     description: "Comma-separated chart themes: black,slate,orange."
     required: false
-    default: "slate"
+    default: "black"
   charts_output_dir:
     description: "Directory (within output_branch) for generated chart matrix files."
     required: false

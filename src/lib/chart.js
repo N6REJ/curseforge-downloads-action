@@ -178,7 +178,7 @@ function buildChartSvg({
   series,
   generatedAt,
   chartType = "total-trend",
-  chartTheme = "slate",
+  chartTheme = "black",
   width = 1000,
   height = 360,
   zeroBaseline = true,
@@ -193,7 +193,7 @@ function buildChartSvg({
   const normalizedSeries = normalizeSeries(series);
   const entries = Object.entries(normalizedSeries).sort(([a], [b]) => a.localeCompare(b));
   const safeType = CHART_TYPES.includes(chartType) ? chartType : "total-trend";
-  const safeTheme = CHART_THEMES.includes(chartTheme) ? chartTheme : "slate";
+  const safeTheme = CHART_THEMES.includes(chartTheme) ? chartTheme : "black";
   const safeDateLabelFormat = CHART_DATE_LABEL_FORMATS.includes(dateLabelFormat)
     ? dateLabelFormat
     : "yyyy-mm-dd";
@@ -353,7 +353,7 @@ function buildTrendChartSvg({ owner, repo, series, generatedAt }) {
     series,
     generatedAt,
     chartType: "total-trend",
-    chartTheme: "slate",
+    chartTheme: "black",
     width: 1000,
     height: 360,
     zeroBaseline: true,
