@@ -1,6 +1,5 @@
 {
   "name": "curseforge-downloads-action",
-  "version": "2026.10.20.8",
   "description": "Track CurseForge mod downloads with a GitHub Action that writes badge-ready JSON and optional SVG charts.",
   "main": "src/index.js",
   "scripts": {
