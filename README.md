@@ -314,7 +314,9 @@ with:
 Behavior:
 
 - Enabled by default. Set `publish_dashboard: "false"` to turn it off.
-- The file is created if missing and refreshed whenever the stats change, so it is never empty.
+- On the first run the full dashboard is generated and written.
+- On later runs your customized dashboard is preserved: only the generated data tables are refreshed from the live payload. Titles, prose, badge rows, chart sections, and footers you edit stay as you left them.
+- The chart sections and chart images are generated on the first run and not overwritten afterwards, so you can customize them freely.
 - Values are rendered from the live payload, so the `Window` row always matches the current `window_days`.
 - If an existing dashboard file is missing the `Window` row (for example after a manual edit), the dashboard update is skipped for that run and the rest of the action continues normally.
 - Badge images use `style=flat-square`, `logo=curseforge`, and `cacheSeconds=900`.
