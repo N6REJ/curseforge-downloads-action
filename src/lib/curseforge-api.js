@@ -80,7 +80,11 @@ function parseTotalFromResponse(data, modId, source) {
   return Math.floor(downloads);
 }
 
-function createTotalClient({ base, apiKey, source }) {
+function createTotalClient({ base, apiKey, source, pathFor }) {
+  const buildPath =
+    pathFor ||
+    ((modId) => `/v1/mods/${encodeURIComponent(String(modId))}`);
+
   async function request(pathname) {
     const url = `${base}${pathname}`;
     const maxAttempts = 5;
@@ -145,7 +149,7 @@ function createTotalClient({ base, apiKey, source }) {
   }
 
   async function getDownloadsTotal(modId) {
-    const data = await request(`/v1/mods/${encodeURIComponent(String(modId))}`);
+    const data = await request(buildPath(modId));
     return parseTotalFromResponse(data, modId, source);
   }
 
@@ -162,7 +166,12 @@ function createCurseForgeClient(apiKey) {
 }
 
 function createCfwidgetClient() {
-  return createTotalClient({ base: CFWIDGET_BASE, apiKey: "", source: "cfwidget" });
+  return createTotalClient({
+    base: CFWIDGET_BASE,
+    apiKey: "",
+    source: "cfwidget",
+    pathFor: (modId) => `/${encodeURIComponent(String(modId))}`,
+  });
 }
 
 function createDownloadsClient({ cfApiKey, fallbackFactory } = {}) {
