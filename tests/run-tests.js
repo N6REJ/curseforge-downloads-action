@@ -7,7 +7,7 @@ const { parseActionInputs } = require("../src/lib/validation");
 const { getFreshCachedTotal } = require("../src/lib/cache");
 const { isRetryableWriteConflict } = require("../src/lib/change-utils");
 const { createCurseForgeClient, createCfwidgetClient, createDownloadsClient } = require("../src/lib/curseforge-api");
-const { buildDashboardMarkdown } = require("../src/lib/dashboard");
+const { buildDashboardMarkdown, refreshDashboardData } = require("../src/lib/dashboard");
 const { run } = require("../src/index");
 
 function testMergeWindow() {
@@ -907,6 +907,80 @@ function testDashboardMarkdownIncludesCharts() {
   assert.match(markdown, /### daily\n\n!\[/);
 }
 
+function testRefreshDashboardDataPreservesCustomization() {
+  const payload = buildPayload({
+    owner: "x",
+    repo: "y",
+    visibility: "public",
+    generatedAt: "2026-02-18T12:00:00.000Z",
+    total: 120,
+    todayDate: "2026-02-18",
+    windowDays: 45,
+    series: { "2026-02-18": 120 },
+    hourlyEnabled: false,
+  });
+
+  const customExisting = [
+    "# My custom title",
+    "",
+    "Hand-written intro the user added.",
+    "",
+    "## My charts",
+    "",
+    "![custom](custom-chart.svg)",
+    "",
+    "## Data",
+    "",
+    "| Metric | Value |",
+    "|---|---|",
+    "| Total | 1 |",
+    "| Day | 1 |",
+    "| Week | 1 |",
+    "| Month | 1 |",
+    "| Year | 1 |",
+    "",
+    "| Field | Value |",
+    "|---|---|",
+    "| Repository | `x/y` |",
+    "| CurseForge mod id | `234567` |",
+    "| Update mode | daily |",
+    "| Window | 45 days |",
+    "| Snapshots | 0 |",
+    "| Partial | none |",
+    "| Generated at | `1970-01-01T00:00:00.000Z` |",
+    "",
+    "<sub>custom footer</sub>",
+    "",
+  ].join("\n");
+
+  const refreshed = refreshDashboardData(customExisting, {
+    inputs: baseInputs({ publishDashboard: true }),
+    payload,
+  });
+
+  assert.match(refreshed, /^# My custom title/);
+  assert.match(refreshed, /Hand-written intro the user added\./);
+  assert.match(refreshed, /## My charts/);
+  assert.match(refreshed, /!\[custom\]\(custom-chart\.svg\)/);
+  assert.match(refreshed, /<sub>custom footer<\/sub>/);
+  assert.match(refreshed, /\| Total \| 120 \|/);
+  assert.match(refreshed, /\| Snapshots \| 1 \|/);
+  assert.match(refreshed, /\| Generated at \| `2026-02-18T12:00:00\.000Z` \|/);
+  assert.ok(!refreshed.includes("| Total | 1 |"));
+
+  const firstRun = refreshDashboardData(null, {
+    inputs: baseInputs({ publishDashboard: true }),
+    payload,
+  });
+  assert.match(firstRun, /^# x\/y downloads/);
+
+  const untouched = refreshDashboardData("# no tables here\n", {
+    inputs: baseInputs({ publishDashboard: true }),
+    payload,
+  });
+  assert.equal(untouched, "# no tables here\n");
+}
+
 async function testRunPublishesDashboardWhenEnabled() {
   const now = new Date("2026-02-18T12:00:00.000Z");
   const owner = "x";
@@ -1066,6 +1140,7 @@ async function runTests() {
   testBuildDashboardMarkdown();
   testDashboardMarkdownTracksWindowDays();
   testDashboardMarkdownIncludesCharts();
+  testRefreshDashboardDataPreservesCustomization();
   await testCurseForgeClient();
   await testCfwidgetClient();
   await testDownloadsClientSelection();

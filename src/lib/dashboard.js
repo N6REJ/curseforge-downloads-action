@@ -142,8 +142,87 @@ function hasWindowRow(content) {
   return typeof content === "string" && content.includes(WINDOW_MARKER);
 }
 
+function splitLines(content) {
+  const normalized = content.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  const trailingNewline = normalized.endsWith("\n");
+  const lines = normalized.split("\n");
+  if (trailingNewline) lines.pop();
+  return { lines, trailingNewline };
+}
+
+function isTableRow(line) {
+  return typeof line === "string" && line.trimStart().startsWith("|");
+}
+
+function replaceTable(lines, headerLine, replacement) {
+  const index = lines.findIndex((line) => line.trim() === headerLine.trim());
+  if (index === -1) return false;
+
+  let end = index + 1;
+  if (end < lines.length && /^\|[\s:|-]+\|$/.test(lines[end].trim())) {
+    end += 1;
+  }
+  while (end < lines.length && isTableRow(lines[end])) {
+    end += 1;
+  }
+
+  lines.splice(index, end - index, ...replacement);
+  return true;
+}
+
+function buildMetricTable(payload) {
+  return [
+    "| Metric | Value |",
+    "|---|---|",
+    `| Total | ${formatNumber(payload.stats.total)} |`,
+    `| Day | ${formatNumber(payload.stats.day)}${payload.partial.day ? " (partial)" : ""} |`,
+    `| Week | ${formatNumber(payload.stats.week)}${payload.partial.week ? " (partial)" : ""} |`,
+    `| Month | ${formatNumber(payload.stats.month)}${payload.partial.month ? " (partial)" : ""} |`,
+    `| Year | ${formatNumber(payload.stats.year)}${payload.partial.year ? " (partial)" : ""} |`,
+  ];
+}
+
+function buildFieldTable(inputs, payload) {
+  const partialLabels = [];
+  if (payload.partial.day) partialLabels.push("day");
+  if (payload.partial.week) partialLabels.push("week");
+  if (payload.partial.month) partialLabels.push("month");
+  if (payload.partial.year) partialLabels.push("year");
+  const partialText = partialLabels.length > 0 ? partialLabels.join(", ") : "none";
+
+  return [
+    "| Field | Value |",
+    "|---|---|",
+    `| Repository | \`${inputs.owner}/${inputs.repo}\` |`,
+    `| CurseForge mod id | \`${inputs.curseforgeModId}\` |`,
+    `| Update mode | ${payload.profile.hourlyEnabled ? "hourly" : "daily"} |`,
+    `| Window | ${payload.snapshots.windowDays} days |`,
+    `| Snapshots | ${payload.snapshots.count} |`,
+    `| Partial | ${partialText} |`,
+    `| Generated at | \`${payload.generatedAt}\` |`,
+  ];
+}
+
+function refreshDashboardData(existingContent, { inputs, payload }) {
+  if (existingContent == null) {
+    return buildDashboardMarkdown({ inputs, payload });
+  }
+
+  const { lines, trailingNewline } = splitLines(existingContent);
+  const changedMetric = replaceTable(lines, "| Metric | Value |", buildMetricTable(payload));
+  const changedField = replaceTable(lines, "| Field | Value |", buildFieldTable(inputs, payload));
+
+  if (!changedMetric && !changedField) {
+    return existingContent;
+  }
+
+  const result = lines.join("\n");
+  return trailingNewline ? `${result}\n` : result;
+}
+
 module.exports = {
   buildDashboardMarkdown,
+  refreshDashboardData,
   hasWindowRow,
   WINDOW_MARKER,
 };

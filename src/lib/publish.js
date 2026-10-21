@@ -2,7 +2,7 @@
 
 const { buildPayload, formatDateUTC, mergeSnapshots } = require("./compute");
 const { buildChartSvg } = require("./chart");
-const { buildDashboardMarkdown, hasWindowRow } = require("./dashboard");
+const { refreshDashboardData, hasWindowRow } = require("./dashboard");
 const { getFreshCachedTotal } = require("./cache");
 const {
   extractPreviousSeries,
@@ -230,7 +230,6 @@ async function publishDashboardIfEnabled({ client, inputs, payload, commitMessag
     return { published: false, path: inputs.dashboardPath };
   }
 
-  const markdown = buildDashboardMarkdown({ inputs, payload });
   const maxAttempts = 4;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
@@ -247,6 +246,8 @@ async function publishDashboardIfEnabled({ client, inputs, payload, commitMessag
       );
       return { published: false, path: inputs.dashboardPath };
     }
+
+    const markdown = refreshDashboardData(previousFile?.content ?? null, { inputs, payload });
 
     if (!hasTextChange(previousFile?.content, markdown)) {
       return { published: false, path: inputs.dashboardPath };
