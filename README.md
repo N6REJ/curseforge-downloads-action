@@ -24,7 +24,7 @@ Choose one setup template:
 1. Download or copy the template that matches the result you want.
 2. Place the file in the repository under `.github/workflows/`.
 3. Set `curseforge_mod_id` to the numeric CurseForge mod (project) ID you want to track.
-4. (Optional) Add a repository secret named `CF_API_KEY` for the official CurseForge for Studios API (Settings → Secrets and variables → Actions → New repository secret). Without it, the action uses the public [cfwidget](https://cfwidget.com/) API, which needs no key.
+4. (Optional) Add a repository secret named `CF_STUDIO_API_KEY` for the official CurseForge for Studios API (Settings → Secrets and variables → Actions → New repository secret). Without it, the action uses the public [cfwidget](https://cfwidget.com/) API, which needs no key.
 5. Commit and push.
 6. Open the repository's **Actions** tab and select **Run workflow** once.
 7. Add one or both badges to the README, replacing `_OWNER_` and `_REPOSITORY_`:
@@ -37,7 +37,7 @@ Choose one setup template:
 ### Where do I find these values?
 
 - **CurseForge mod id**: open your project on CurseForge. The number in the project URL (`curseforge.com/minecraft/mc-mods/<slug>` → see the project's "Project ID" under the About section) is the `curseforge_mod_id`.
-- **CurseForge API key (optional)**: create one from your [CurseForge for Studios](https://console.curseforge.com/) account and store it as the `CF_API_KEY` secret.
+- **CurseForge API key (optional)**: create one from your [CurseForge for Studios](https://console.curseforge.com/) account and store it as the `CF_STUDIO_API_KEY` secret.
 
 ### Which download source is used?
 
@@ -45,13 +45,13 @@ The action supports two sources and picks them automatically:
 
 | Condition | Source | Key required | Notes |
 |---|---|---|---|
-| `cf_api_key` set | Official CurseForge for Studios API (`api.curseforge.com`) | Yes | Stable and supported; preferred. |
-| `cf_api_key` unset | Public cfwidget API (`api.cfwidget.com`) | No | Zero-setup fallback for casual use. |
+| `cf_studio_api_key` set | Official CurseForge for Studios API (`api.curseforge.com`) | Yes | Stable and supported; preferred. |
+| `cf_studio_api_key` unset | Public cfwidget API (`api.cfwidget.com`) | No | Zero-setup fallback for casual use. |
 | Key set but the official API rejects the request | cfwidget fallback | n/a | The action logs a warning and retries against cfwidget. |
 
 Both sources return a single running download total, so day/week/month/year comparisons work the same either way.
 
-> The cfwidget fallback is an independent, community-run service. It is convenient and needs no account, but it is not operated by CurseForge. For the most reliable results, set `CF_API_KEY`.
+> The cfwidget fallback is an independent, community-run service. It is convenient and needs no account, but it is not operated by CurseForge. For the most reliable results, set `CF_STUDIO_API_KEY`.
 
 Public badges need a publicly readable result file. Private repositories usually cannot display them to signed out visitors.
 
@@ -65,7 +65,7 @@ Everything remains in the repository, making the result easy to inspect, reuse, 
 
 ## How it works (short version)
 
-1. Read the download total for your mod from the CurseForge API using `curseforge_mod_id`. If the `CF_API_KEY` secret is set, the official CurseForge for Studios API is used; otherwise the action falls back to the public cfwidget API.
+1. Read the download total for your mod from the CurseForge API using `curseforge_mod_id`. If the `CF_STUDIO_API_KEY` secret is set, the official CurseForge for Studios API is used; otherwise the action falls back to the public cfwidget API.
 2. Save one total for the current day.
 3. Compare the available history to show one day, seven day, thirty day, and rolling 365-day changes.
 4. Clearly mark a comparison as partial when there is not yet enough history for the complete period.
@@ -474,7 +474,7 @@ For the `v1` major line, the project follows these stability expectations:
 | `owner` | No | workflow repo owner | string | Target repo owner (publish destination) |
 | `repo` | No | workflow repo name | string | Target repo name (publish destination) |
 | `curseforge_mod_id` | Yes | – | integer | CurseForge mod (project) ID whose download total is tracked |
-| `cf_api_key` | No | empty | string | Optional CurseForge for Studios API key (`${{ secrets.CF_API_KEY }}`); when empty, the public cfwidget API is used (no key) |
+| `cf_studio_api_key` | No | empty | string | Optional CurseForge for Studios API key (`${{ secrets.CF_STUDIO_API_KEY }}`); when empty, the public cfwidget API is used (no key) |
 | `window_days` | No | `365` | integer | Allowed range: `1..3650`; keep `>=365` for a complete year comparison |
 | `enable_hourly_profile` | No | `false` | boolean | true/false, 1/0, yes/no accepted |
 | `output_branch` | No | `stats-data` | string | Must be a valid git branch name |
@@ -541,7 +541,7 @@ For a new setup, expect weekly and monthly comparisons to remain partial until e
 | Badge says `resource not found` | Repo is private | Publish data from a public repo/branch for public badges |
 | `partial.week` or `partial.month` is `true` | Warm-up period or missing baseline snapshots | Wait for enough snapshots; this is expected during early runs |
 | Values look very low | Mod has little/no download traffic | Confirm the mod id is correct and the project has real downloads |
-| Action fails with `401`/`403` | CurseForge API key set but invalid, and the cfwidget fallback also rejected the request | Check the `CF_API_KEY` secret, or remove it to use the keyless cfwidget fallback |
+| Action fails with `401`/`403` | CurseForge API key set but invalid, and the cfwidget fallback also rejected the request | Check the `CF_STUDIO_API_KEY` secret, or remove it to use the keyless cfwidget fallback |
 | Action fails with `404` | Wrong CurseForge mod id | Check `curseforge_mod_id` against your project's Project ID |
 | Workflow reports no commit | No material change between previous and current payload | Check `published` output; this is expected when totals did not change |
 | Push/write fails on `stats-data` | Missing write permission or branch protection blocks Actions | Set `permissions: contents: write`, pass `token`, allow Actions to push or use another branch |
@@ -587,7 +587,7 @@ No. `stats-data` is only used as a storage branch for the generated files.
 ## Security
 
 - Grant the workflow only the repository permissions required for its selected output.
-- Store your CurseForge API key as the `CF_API_KEY` secret; never commit it to the repository.
+- Store your CurseForge API key as the `CF_STUDIO_API_KEY` secret; never commit it to the repository.
 - Remember that public badges need a publicly readable result file.
 - Refer to the repository [Security Policy](https://github.com/N6REJ/curseforge-downloads-action/security/policy) for private vulnerability reporting.
 - Additional policies are available in [`.github/PRIVACY.md`](.github/PRIVACY.md) and [`.github/EULA.md`](.github/EULA.md).

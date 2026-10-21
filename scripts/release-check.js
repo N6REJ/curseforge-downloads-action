@@ -39,7 +39,7 @@ function main() {
 
   if (fileExists("action.yml")) {
     assertIncludes(errors, "action.yml", "curseforge_mod_id", "CurseForge mod id input");
-    assertIncludes(errors, "action.yml", "cf_api_key", "CurseForge API key input");
+    assertIncludes(errors, "action.yml", "cf_studio_api_key", "CurseForge for Studios API key input");
     assertIncludes(errors, "action.yml", "node24", "Node 24 runtime");
     assertIncludes(errors, "action.yml", "chart_date_label_format", "chart date format input");
     assertIncludes(errors, "action.yml", "chart_show_generated_at", "generated footer input");
@@ -75,7 +75,7 @@ function main() {
 
   if (fileExists("README.md")) {
     assertIncludes(errors, "README.md", "curseforge_mod_id", "CurseForge mod id docs");
-    assertIncludes(errors, "README.md", "CF_API_KEY", "CurseForge API key secret docs");
+    assertIncludes(errors, "README.md", "CF_STUDIO_API_KEY", "CurseForge API key secret docs");
     assertIncludes(errors, "README.md", "chart_date_label_format", "chart date format docs");
     assertIncludes(errors, "README.md", "chart_show_generated_at", "generated footer docs");
     assertIncludes(errors, "README.md", "chart_title_mode", "title mode docs");

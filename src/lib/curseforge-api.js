@@ -49,9 +49,9 @@ function statusHint(status, source) {
   const label = source === "cfwidget" ? "cfwidget" : "CurseForge";
   if (status === 401 || status === 403) {
     if (source === "cfwidget") {
-      return " The cfwidget fallback rejected the request; retry later, or set a CurseForge API key (input 'cf_api_key' / secret CF_API_KEY).";
+      return " The cfwidget fallback rejected the request; retry later, or set a CurseForge API key (input 'cf_studio_api_key' / secret CF_STUDIO_API_KEY).";
     }
-    return " Check the CurseForge API key (input 'cf_api_key' / secret CF_API_KEY).";
+    return " Check the CurseForge API key (input 'cf_studio_api_key' / secret CF_STUDIO_API_KEY).";
   }
   if (status === 404) {
     return " Check the 'curseforge_mod_id' input.";
@@ -160,7 +160,7 @@ function createTotalClient({ base, apiKey, source, pathFor }) {
 }
 
 function createCurseForgeClient(apiKey) {
-  if (!apiKey) throw new Error("Missing CF_API_KEY.");
+  if (!apiKey) throw new Error("Missing CF_STUDIO_API_KEY.");
 
   return createTotalClient({ base: API_BASE, apiKey, source: "curseforge" });
 }

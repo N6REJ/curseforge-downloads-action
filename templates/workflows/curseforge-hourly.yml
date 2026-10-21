@@ -23,7 +23,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           curseforge_mod_id: "0000000"
-          cf_api_key: ${{ secrets.CF_API_KEY }}
+          cf_studio_api_key: ${{ secrets.CF_STUDIO_API_KEY }}
           window_days: "365"
           enable_hourly_profile: "true"
           output_branch: "stats-data"

@@ -15,8 +15,8 @@ inputs:
   curseforge_mod_id:
     description: "CurseForge mod (project) ID whose download total should be tracked."
     required: true
-  cf_api_key:
-    description: "Optional CurseForge for Studios API key (pass secrets.CF_API_KEY). When omitted, the action falls back to the public cfwidget API, which needs no key."
+  cf_studio_api_key:
+    description: "Optional CurseForge for Studios API key (pass secrets.CF_STUDIO_API_KEY). When omitted, the action falls back to the public cfwidget API, which needs no key."
     required: false
   window_days:
     description: "Rolling snapshot window length in days."

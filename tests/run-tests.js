@@ -129,7 +129,7 @@ function testInputsCurseforge() {
   const parsed = parseActionInputs({
     GITHUB_REPOSITORY: "x/y",
     INPUT_CURSEFORGE_MOD_ID: "234567",
-    INPUT_CF_API_KEY: "cf-test-key",
+    INPUT_CF_STUDIO_API_KEY: "cf-test-key",
   });
 
   assert.equal(parsed.curseforgeModId, 234567);
@@ -266,7 +266,7 @@ async function testCurseForgeClient() {
   const originalFetch = globalThis.fetch;
 
   try {
-    assert.throws(() => createCurseForgeClient(""), /CF_API_KEY/);
+    assert.throws(() => createCurseForgeClient(""), /CF_STUDIO_API_KEY/);
 
     globalThis.fetch = async () =>
       new Response(JSON.stringify({ data: { downloadCount: 12_345 } }), {
@@ -280,7 +280,7 @@ async function testCurseForgeClient() {
       new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
     await assert.rejects(
       () => createCurseForgeClient("bad-key").getDownloadsTotal(42),
-      /CF_API_KEY/,
+      /CF_STUDIO_API_KEY/,
     );
 
     globalThis.fetch = async () =>

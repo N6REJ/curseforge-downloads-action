@@ -98,7 +98,7 @@ async function run(options = {}) {
     );
   }
 
-  const cfApiKey = inputs.cfApiKey || env.CF_API_KEY;
+  const cfApiKey = inputs.cfApiKey || env.CF_STUDIO_API_KEY;
 
   const client = createClient(token);
   const curseForgeClient = injectedDownloads
