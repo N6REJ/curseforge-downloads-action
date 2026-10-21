@@ -117,7 +117,21 @@ function computeCalendarRange(total, series, periodStartDate) {
   if (entries.length === 0) return { value: 0, partial: true };
 
   const baseline = pickBaseline(entries, periodStartDate);
-  if (!baseline) return { value: 0, partial: true };
+  if (!baseline) {
+    // No baseline found in series and no entries relative to period start.
+    // On first run with no historical data before the period, treat as all downloads in period.
+    return { value: Math.max(0, Math.floor(total)), partial: true };
+  }
+
+  // If we had to use a snapshot after the period start as baseline (partial),
+  // and there are no snapshots before or at period start, this means we have
+  // no history for this period - treat baseline as 0 for first-run case.
+  if (baseline.partial) {
+    const hasBeforeOrAt = entries.some(([date]) => date <= periodStartDate);
+    if (!hasBeforeOrAt) {
+      return { value: Math.max(0, Math.floor(total)), partial: true };
+    }
+  }
 
   return {
     value: Math.max(0, Math.floor(total) - Math.floor(baseline.value)),
