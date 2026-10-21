@@ -1,6 +1,6 @@
 "use strict";
 
-const { buildPayload, formatDateUTC, mergeSnapshots } = require("./compute");
+const { buildPayload, formatDateUTC, mergeSnapshots, calendarRetentionDays } = require("./compute");
 const { buildChartSvg } = require("./chart");
 const { refreshDashboardData, hasWindowRow } = require("./dashboard");
 const { getFreshCachedTotal } = require("./cache");
@@ -22,6 +22,7 @@ async function publishPayload({ client, curseForgeClient, inputs, repoMeta, now,
   let changed = false;
   let total = null;
   let totalSource = "api";
+  const effectiveWindowDays = Math.max(inputs.windowDays, calendarRetentionDays(todayDate));
 
   for (let attempt = 1; attempt <= maxPublishAttempts; attempt += 1) {
     const previousFile = await client.getFile(
@@ -55,7 +56,7 @@ async function publishPayload({ client, curseForgeClient, inputs, repoMeta, now,
       }
     }
 
-    const mergedSeries = mergeSnapshots(previousSeries, todayDate, total, inputs.windowDays);
+    const mergedSeries = mergeSnapshots(previousSeries, todayDate, total, effectiveWindowDays);
 
     payload = buildPayload({
       owner: inputs.owner,
@@ -64,7 +65,7 @@ async function publishPayload({ client, curseForgeClient, inputs, repoMeta, now,
       generatedAt,
       total,
       todayDate,
-      windowDays: inputs.windowDays,
+      windowDays: effectiveWindowDays,
       series: mergedSeries,
       hourlyEnabled: inputs.hourlyEnabled,
     });

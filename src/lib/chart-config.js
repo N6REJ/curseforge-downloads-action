@@ -8,22 +8,27 @@ const CHART_TITLE_MODES = ["default", "custom", "none"];
 const CHART_TYPE_META = {
   "total-trend": {
     latestLabel: "Latest total",
+    bucket: "total",
     rangeDays: 0,
   },
   daily: {
     latestLabel: "Latest day",
+    bucket: "day",
     rangeDays: 1,
   },
   weekly: {
     latestLabel: "Latest week",
+    bucket: "week",
     rangeDays: 7,
   },
   monthly: {
     latestLabel: "Latest month",
+    bucket: "month",
     rangeDays: 30,
   },
   yearly: {
     latestLabel: "Latest year",
+    bucket: "year",
     rangeDays: 365,
   },
 };

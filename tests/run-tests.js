@@ -2,7 +2,7 @@
 
 const assert = require("node:assert/strict");
 
-const { buildPayload, mergeSnapshots } = require("../src/lib/compute");
+const { buildPayload, mergeSnapshots, calendarRetentionDays } = require("../src/lib/compute");
 const { parseActionInputs } = require("../src/lib/validation");
 const { getFreshCachedTotal } = require("../src/lib/cache");
 const { isRetryableWriteConflict } = require("../src/lib/change-utils");
@@ -57,7 +57,7 @@ function testPayloadYearly() {
     todayDate: "2026-02-18",
     windowDays: 365,
     series: {
-      "2025-02-18": 800,
+      "2026-01-01": 800,
       "2026-02-18": 1200,
     },
     hourlyEnabled: false,
@@ -493,7 +493,7 @@ async function testRunUsesCacheAndSkipsApi() {
     generatedAt: "2026-02-18T11:55:00.000Z",
     total: 100,
     todayDate: "2026-02-18",
-    windowDays: 45,
+    windowDays: 49,
     series: {
       "2026-02-17": 90,
       "2026-02-18": 100,
@@ -1124,10 +1124,47 @@ async function testRunSkipsDashboardMissingWindowRow() {
   assert.match(warnings[0], /missing the window row/);
 }
 
+function testCalendarBuckets() {
+  const payload = buildPayload({
+    owner: "n6rej",
+    repo: "demo",
+    visibility: "public",
+    generatedAt: "2026-03-02T00:00:00.000Z",
+    total: 1000,
+    todayDate: "2026-03-02",
+    windowDays: 400,
+    series: {
+      "2026-01-01": 100,
+      "2026-02-28": 900,
+      "2026-03-01": 950,
+      "2026-03-02": 1000,
+    },
+    hourlyEnabled: false,
+  });
+
+  assert.equal(payload.stats.year, 900);
+  assert.equal(payload.partial.year, false);
+  assert.equal(payload.stats.month, 50);
+  assert.equal(payload.partial.month, false);
+  assert.equal(payload.stats.week, 0);
+  assert.equal(payload.partial.week, false);
+  assert.equal(payload.periods.year.label, "2026");
+  assert.equal(payload.periods.month.label, "Mar 2026");
+  assert.match(payload.periods.week.label, /^2026-W\d{2}$/);
+}
+
+function testCalendarRetentionDays() {
+  assert.equal(calendarRetentionDays("2026-01-01"), 1);
+  assert.equal(calendarRetentionDays("2026-12-31"), 365);
+  assert.equal(calendarRetentionDays("2026-02-18"), 49);
+}
+
 async function runTests() {
   testMergeWindow();
   testPayload();
   testPayloadYearly();
+  testCalendarBuckets();
+  testCalendarRetentionDays();
   testInputs();
   testInputsDefaultWindowDays();
   testInputsDashboard();

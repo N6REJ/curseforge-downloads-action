@@ -74,14 +74,49 @@ function pickBaseline(entries, cutoffDate) {
   return null;
 }
 
+function startOfIsoWeek(dateString) {
+  const date = parseDateUTC(dateString);
+  const isoDay = date.getUTCDay() === 0 ? 7 : date.getUTCDay();
+  return formatDateUTC(addDays(date, -(isoDay - 1)));
+}
+
+function startOfMonth(dateString) {
+  const date = parseDateUTC(dateString);
+  return formatDateUTC(new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1)));
+}
+
+function startOfYear(dateString) {
+  const date = parseDateUTC(dateString);
+  return formatDateUTC(new Date(Date.UTC(date.getUTCFullYear(), 0, 1)));
+}
+
+function isoWeekNumber(dateString) {
+  const date = parseDateUTC(dateString);
+  const thursday = addDays(date, 3 - ((date.getUTCDay() + 6) % 7));
+  const firstThursday = new Date(Date.UTC(thursday.getUTCFullYear(), 0, 4));
+  const offset = (firstThursday.getUTCDay() + 6) % 7;
+  const week1Thursday = addDays(firstThursday, 3 - offset);
+  const diffDays = Math.round((thursday.getTime() - week1Thursday.getTime()) / 86_400_000);
+  return 1 + Math.floor(diffDays / 7);
+}
+
+const MONTH_NAMES = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+];
+
 function computeRange(total, series, todayDate, days) {
   const today = parseDateUTC(todayDate);
   const cutoffDate = formatDateUTC(addDays(today, -days));
+  return computeCalendarRange(total, series, cutoffDate);
+}
+
+function computeCalendarRange(total, series, periodStartDate) {
   const entries = Object.entries(series).sort(([a], [b]) => a.localeCompare(b));
 
   if (entries.length === 0) return { value: 0, partial: true };
 
-  const baseline = pickBaseline(entries, cutoffDate);
+  const baseline = pickBaseline(entries, periodStartDate);
   if (!baseline) return { value: 0, partial: true };
 
   return {
@@ -90,11 +125,38 @@ function computeRange(total, series, todayDate, days) {
   };
 }
 
+function buildPeriods(todayDate) {
+  const today = parseDateUTC(todayDate);
+  const year = today.getUTCFullYear();
+
+  const weekStart = startOfIsoWeek(todayDate);
+  const weekEnd = formatDateUTC(addDays(parseDateUTC(weekStart), 6));
+  const monthStart = startOfMonth(todayDate);
+  const monthEnd = formatDateUTC(new Date(Date.UTC(year, today.getUTCMonth() + 1, 0)));
+  const yearStart = startOfYear(todayDate);
+  const yearEnd = formatDateUTC(new Date(Date.UTC(year, 11, 31)));
+
+  return {
+    day: { start: todayDate, end: todayDate, label: todayDate },
+    week: {
+      start: weekStart,
+      end: weekEnd,
+      label: `${year}-W${String(isoWeekNumber(todayDate)).padStart(2, "0")}`,
+    },
+    month: {
+      start: monthStart,
+      end: monthEnd,
+      label: `${MONTH_NAMES[today.getUTCMonth()]} ${year}`,
+    },
+    year: { start: yearStart, end: yearEnd, label: String(year) },
+  };
+}
+
 function computeStats(total, series, todayDate) {
-  const day = computeRange(total, series, todayDate, 1);
-  const week = computeRange(total, series, todayDate, 7);
-  const month = computeRange(total, series, todayDate, 30);
-  const year = computeRange(total, series, todayDate, 365);
+  const day = computeCalendarRange(total, series, formatDateUTC(addDays(parseDateUTC(todayDate), -1)));
+  const week = computeCalendarRange(total, series, startOfIsoWeek(todayDate));
+  const month = computeCalendarRange(total, series, startOfMonth(todayDate));
+  const year = computeCalendarRange(total, series, startOfYear(todayDate));
 
   return {
     stats: {
@@ -139,13 +201,14 @@ function buildPayload({
   const { stats, partial } = computeStats(total, normalizedSeries, todayDate);
 
   return {
-    schemaVersion: "1",
+    schemaVersion: "2",
     owner,
     repo,
     visibility,
     generatedAt,
     stats,
     partial,
+    periods: buildPeriods(todayDate),
     snapshots: getSnapshotMeta(normalizedSeries, windowDays),
     profile: {
       defaultMode: hourlyEnabled ? "hourly" : "daily",
@@ -154,10 +217,22 @@ function buildPayload({
   };
 }
 
+function calendarRetentionDays(todayDate) {
+  const today = parseDateUTC(todayDate);
+  const start = parseDateUTC(startOfYear(todayDate));
+  return Math.round((today.getTime() - start.getTime()) / 86_400_000) + 1;
+}
+
 module.exports = {
   formatDateUTC,
   mergeSnapshots,
   computeStats,
   buildPayload,
   normalizeSeries,
+  computeCalendarRange,
+  startOfIsoWeek,
+  startOfMonth,
+  startOfYear,
+  isoWeekNumber,
+  calendarRetentionDays,
 };

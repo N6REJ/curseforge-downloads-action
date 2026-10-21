@@ -9,6 +9,17 @@ function formatNumber(value) {
   return Number(value).toLocaleString("en-US");
 }
 
+function formatPeriod(payload) {
+  const periods = payload?.periods;
+  if (!periods) return "rolling";
+  const label = (key) => (periods[key] && periods[key].label ? periods[key].label : "");
+  return [
+    `week \`${label("week")}\``,
+    `month \`${label("month")}\``,
+    `year \`${label("year")}\``,
+  ].join(", ");
+}
+
 function buildRawBaseUrl(owner, repo, outputBranch, outputPath) {
   const dir = outputPath.includes("/") ? outputPath.slice(0, outputPath.lastIndexOf("/")) : "";
   const prefix = dir.length > 0 ? `/${dir}` : "";
@@ -122,6 +133,7 @@ function buildDashboardMarkdown({ inputs, payload }) {
     `| Repository | \`${repoLabel}\` |`,
     `| CurseForge mod id | \`${inputs.curseforgeModId}\` |`,
     `| Update mode | ${payload.profile.hourlyEnabled ? "hourly" : "daily"} |`,
+    `| Period | ${formatPeriod(payload)} |`,
     `| Window | ${payload.snapshots.windowDays} days |`,
     `| Snapshots | ${payload.snapshots.count} |`,
     `| Partial | ${partialText} |`,
@@ -196,6 +208,7 @@ function buildFieldTable(inputs, payload) {
     `| Repository | \`${inputs.owner}/${inputs.repo}\` |`,
     `| CurseForge mod id | \`${inputs.curseforgeModId}\` |`,
     `| Update mode | ${payload.profile.hourlyEnabled ? "hourly" : "daily"} |`,
+    `| Period | ${formatPeriod(payload)} |`,
     `| Window | ${payload.snapshots.windowDays} days |`,
     `| Snapshots | ${payload.snapshots.count} |`,
     `| Partial | ${partialText} |`,

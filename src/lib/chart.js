@@ -1,6 +1,11 @@
 "use strict";
 
-const { normalizeSeries } = require("./compute");
+const {
+  normalizeSeries,
+  startOfIsoWeek,
+  startOfMonth,
+  startOfYear,
+} = require("./compute");
 const {
   CHART_TYPES,
   CHART_THEMES,
@@ -111,14 +116,26 @@ function pickBaseline(entries, cutoffDate, maxIndex) {
   return null;
 }
 
+const BUCKET_START = {
+  day: (date) => shiftDate(date, 1),
+  week: (date) => startOfIsoWeek(date),
+  month: (date) => startOfMonth(date),
+  year: (date) => startOfYear(date),
+};
+
 function toChartEntries(entries, chartType) {
   if (chartType === "total-trend") {
     return entries.map(([date, total]) => ({ date, value: total }));
   }
 
-  const { rangeDays } = CHART_TYPE_META[chartType];
+  const { bucket } = CHART_TYPE_META[chartType];
+  const bucketStart = BUCKET_START[bucket];
+  if (!bucketStart) {
+    return entries.map(([date, total]) => ({ date, value: total }));
+  }
+
   return entries.map(([date, total], index) => {
-    const baseline = pickBaseline(entries, shiftDate(date, rangeDays), index);
+    const baseline = pickBaseline(entries, bucketStart(date), index);
     const baselineValue = baseline ? baseline[1] : total;
     return { date, value: Math.max(0, total - baselineValue) };
   });

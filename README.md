@@ -67,8 +67,8 @@ Everything remains in the repository, making the result easy to inspect, reuse, 
 
 1. Read the download total for your mod from the CurseForge API using `curseforge_mod_id`. If the `CF_STUDIO_API_KEY` secret is set, the official CurseForge for Studios API is used; otherwise the action falls back to the public cfwidget API.
 2. Save one total for the current day.
-3. Compare the available history to show one day, seven day, thirty day, and rolling 365-day changes.
-4. Clearly mark a comparison as partial when there is not yet enough history for the complete period.
+3. Compare the available history to show day, ISO week, calendar month, and calendar year changes.
+4. Clearly mark a comparison as partial when there is not yet enough history for the complete calendar period.
 5. Publish the result to `stats-data:curseforge/downloads.json` by default.
 6. Optionally publish chart images from the same history.
 
@@ -109,29 +109,30 @@ Alternative jsDelivr pattern:
 https://cdn.jsdelivr.net/gh/<_OWNER_>/<_REPO_>@stats-data/curseforge/downloads.json
 ```
 
+## Periods (calendar buckets)
+
+`day`, `week`, `month`, and `year` are **calendar periods**, not rolling windows:
+
+- `day` = the current day (since the previous snapshot).
+- `week` = the current ISO week (Monday–Sunday, UTC).
+- `month` = the current calendar month (since the 1st, UTC).
+- `year` = the current calendar year (since January 1, UTC).
+
+Each value is `today's total − the snapshot at the period start`. The `periods` block in the JSON records each period's `start`, `end`, and a `label` (`2026-W43`, `Oct 2026`, `2026`).
+
 ## Warm-up period (important)
 
-Weekly and monthly comparisons need earlier daily totals. A new setup therefore takes time to build a complete history.
+Calendar comparisons need a snapshot at or after the period start. A new setup therefore takes time to build history, and values reset when a period rolls over.
 
-- Daily comparisons need a snapshot from one day earlier.
-- Weekly comparisons need a snapshot from seven days earlier.
-- Monthly comparisons need a snapshot from thirty days earlier.
-- Yearly comparisons need a snapshot from 365 days earlier, so `window_days` must be at least `365` (the default) for a complete year value.
-- A comparison is complete when its exact earlier date is available. Missing intermediate dates do not make that comparison partial.
+- A comparison is complete when a snapshot exists exactly on the period start date.
+- If the exact date is missing but a later snapshot exists, the value is the best available and is flagged `partial`.
+- If no snapshot is retained at or after the period start, the value is `partial`.
 
 A partial value is not a failure. It is the best comparison available from the dates collected so far.
 
-Typical first year, with a snapshot collected each day:
+Retention: the action keeps enough history for the current calendar year automatically. The effective `window_days` is raised to at least the day-of-year (up to ~366) so a January 1 baseline is retained even when `window_days` is smaller.
 
-| Snapshot age | `partial.day` | `partial.week` | `partial.month` | `partial.year` | Notes |
-|---|---|---|---|---|---|
-| Day 0 | `true` | `true` | `true` | `true` | The first run has no earlier total |
-| Days 1-6 | `false` | `true` | `true` | `true` | Daily comparison becomes available first |
-| Days 7-29 | `false` | `false` | `true` | `true` | Weekly comparison becomes available next |
-| Days 30-364 | `false` | `false` | `false` | `true` | Daily/weekly/monthly available; year still building |
-| Day 365+ | `false` | `false` | `false` | `false` | All four exact baseline dates are available |
-
-Snapshot age is the number of elapsed days since the first snapshot. If a required baseline date is missing or has been pruned, its comparison remains partial. The year value is a rolling 365 days from when history began, not a calendar year.
+Because buckets are calendar-based, values reset at period boundaries: `month` drops to a small number on the 1st, `year` on January 1, and `week` each Monday.
 
 ## README badge examples (copy-paste)
 
@@ -421,11 +422,11 @@ foreach ($d in $defs) {
 
 Schema file: `schema/downloads.schema.json`
 
-The action writes `schemaVersion: "1"` using this structure:
+The action writes `schemaVersion: "2"` using this structure:
 
 ```json
 {
-  "schemaVersion": "1",
+  "schemaVersion": "2",
   "owner": "N6REJ",
   "repo": "repository",
   "visibility": "public",
@@ -442,6 +443,12 @@ The action writes `schemaVersion: "1"` using this structure:
     "week": false,
     "month": true,
     "year": true
+  },
+  "periods": {
+    "day": { "start": "2026-02-18", "end": "2026-02-18", "label": "2026-02-18" },
+    "week": { "start": "2026-02-16", "end": "2026-02-22", "label": "2026-W08" },
+    "month": { "start": "2026-02-01", "end": "2026-02-28", "label": "Feb 2026" },
+    "year": { "start": "2026-01-01", "end": "2026-12-31", "label": "2026" }
   },
   "snapshots": {
     "windowDays": 365,
@@ -461,12 +468,14 @@ The action writes `schemaVersion: "1"` using this structure:
 
 ## Stability guarantees
 
-For the `v1` major line, the project follows these stability expectations:
+For the `v2` major line, the project follows these stability expectations:
 
 - Existing output keys in `downloads.json` will remain stable.
 - `schemaVersion` changes only for explicit schema migrations.
 - Existing action inputs and outputs are not removed without a major version bump.
 - Workflow template updates are additive or documented in release notes when behavior changes.
+
+Note: `schemaVersion: "2"` changed `week`/`month`/`year` from rolling windows to calendar periods and added the `periods` block. The keys are unchanged; only their meaning (and the extra block) is new.
 
 ## Inputs
 
@@ -477,7 +486,7 @@ For the `v1` major line, the project follows these stability expectations:
 | `repo` | No | workflow repo name | string | Target repo name (publish destination) |
 | `curseforge_mod_id` | Yes | – | integer | CurseForge mod (project) ID whose download total is tracked |
 | `cf_studio_api_key` | No | empty | string | Optional CurseForge for Studios API key (`${{ secrets.CF_STUDIO_API_KEY }}`); when empty, the public cfwidget API is used (no key) |
-| `window_days` | No | `365` | integer | Allowed range: `1..3650`; keep `>=365` for a complete year comparison |
+| `window_days` | No | `365` | integer | Allowed range: `1..3650`; automatically raised to at least the current day-of-year so the calendar-year baseline is retained |
 | `enable_hourly_profile` | No | `false` | boolean | true/false, 1/0, yes/no accepted |
 | `output_branch` | No | `stats-data` | string | Must be a valid git branch name |
 | `output_path` | No | `curseforge/downloads.json` | string | Repo-relative file path; traversal blocked |

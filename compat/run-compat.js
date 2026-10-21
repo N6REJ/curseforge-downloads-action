@@ -27,14 +27,14 @@ function testBuildPayloadExactBaseline() {
   assert.deepEqual(payload.stats, {
     total: 150,
     day: 5,
-    week: 20,
-    month: 50,
+    week: 5,
+    month: 20,
     year: 50,
   });
   assert.deepEqual(payload.partial, {
     day: false,
-    week: false,
-    month: false,
+    week: true,
+    month: true,
     year: true,
   });
 }
@@ -58,7 +58,7 @@ function testBuildPayloadPartialBaseline() {
   assert.deepEqual(payload.stats, {
     total: 220,
     day: 0,
-    week: 20,
+    week: 0,
     month: 20,
     year: 20,
   });

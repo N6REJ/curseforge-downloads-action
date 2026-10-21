@@ -19,7 +19,7 @@ inputs:
     description: "Optional CurseForge for Studios API key (pass secrets.CF_STUDIO_API_KEY). When omitted, the action falls back to the public cfwidget API, which needs no key."
     required: false
   window_days:
-    description: "Rolling snapshot window length in days."
+    description: "Snapshot retention window in days. Automatically raised to at least the current day-of-year so the calendar-year baseline is retained."
     required: false
     default: "365"
   enable_hourly_profile:
@@ -117,13 +117,13 @@ outputs:
   total:
     description: "Computed CurseForge mod downloads."
   day:
-    description: "Computed day delta."
+    description: "Computed download delta for the current calendar day."
   week:
-    description: "Computed week delta."
+    description: "Computed download delta for the current ISO week (Mon-Sun, UTC)."
   month:
-    description: "Computed month delta."
+    description: "Computed download delta for the current calendar month (UTC)."
   year:
-    description: "Computed rolling 365-day delta."
+    description: "Computed download delta for the current calendar year (UTC)."
   partial_day:
     description: "Whether day value is partial."
   partial_week:
