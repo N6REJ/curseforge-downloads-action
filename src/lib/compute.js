@@ -129,7 +129,11 @@ function computeCalendarRange(total, series, periodStartDate) {
   if (baseline.partial) {
     const hasBeforeOrAt = entries.some(([date]) => date <= periodStartDate);
     if (!hasBeforeOrAt) {
-      return { value: Math.max(0, Math.floor(total)), partial: true };
+      // Only apply first-run assumption if it's effectively the initial run
+      // (single snapshot or first snapshot is the one we're using as baseline)
+      if (entries.length === 1) {
+        return { value: Math.max(0, Math.floor(total)), partial: true };
+      }
     }
   }
 
