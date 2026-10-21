@@ -852,7 +852,7 @@ function testBuildDashboardMarkdown() {
   assert.match(markdown, /downloads%2Fyear/);
   assert.match(markdown, /\| CurseForge mod id \| `234567` \|/);
   assert.match(markdown, /raw\.githubusercontent\.com\/x\/y\/stats-data\/curseforge\/downloads\.json/);
-  assert.ok(!markdown.includes("## Trend"));
+  assert.ok(!markdown.includes("## Total downloads trend"));
 }
 
 function testDashboardMarkdownTracksWindowDays() {
@@ -897,10 +897,14 @@ function testDashboardMarkdownIncludesCharts() {
     payload,
   });
 
-  assert.match(markdown, /## Trend/);
+  assert.match(markdown, /## Total downloads trend/);
   assert.match(markdown, /## All charts/);
+  assert.match(markdown, /### total-trend/);
+  assert.match(markdown, /### daily/);
   assert.match(markdown, /total-trend--black\.svg/);
   assert.match(markdown, /daily--slate\.svg/);
+  assert.match(markdown, /## Total downloads trend\n\n!\[/);
+  assert.match(markdown, /### daily\n\n!\[/);
 }
 
 async function testRunPublishesDashboardWhenEnabled() {
