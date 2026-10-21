@@ -4,7 +4,7 @@ const fs = require("node:fs");
 
 const { parseActionInputs } = require("./lib/validation");
 const { createGitHubClient } = require("./lib/github-api");
-const { createCurseForgeClient } = require("./lib/curseforge-api");
+const { createDownloadsClient } = require("./lib/curseforge-api");
 const { publishPayload, publishChartIfEnabled, publishDashboardIfEnabled } = require("./lib/publish");
 
 function setOutput(name, value) {
@@ -77,7 +77,8 @@ async function run(options = {}) {
   const env = options.env || process.env;
   const parseInputs = options.parseActionInputs || parseActionInputs;
   const createClient = options.createGitHubClient || createGitHubClient;
-  const createCurseForge = options.createCurseForgeClient || createCurseForgeClient;
+  const createDownloads = options.createDownloadsClient || createDownloadsClient;
+  const injectedDownloads = options.createCurseForgeClient;
   const nowProvider = options.nowProvider || (() => new Date());
   const writeOutput = options.setOutput || setOutput;
   const writeSummary = options.appendSummary || appendSummary;
@@ -98,14 +99,11 @@ async function run(options = {}) {
   }
 
   const cfApiKey = inputs.cfApiKey || env.CF_API_KEY;
-  if (!cfApiKey) {
-    throw new Error(
-      "A CurseForge API key is required. Pass with.cf_api_key: ${{ secrets.CF_API_KEY }} (recommended), or set env.CF_API_KEY.",
-    );
-  }
 
   const client = createClient(token);
-  const curseForgeClient = createCurseForge(cfApiKey);
+  const curseForgeClient = injectedDownloads
+    ? injectedDownloads(cfApiKey)
+    : createDownloads({ cfApiKey });
   const repoMeta = await client.getRepository(inputs.owner, inputs.repo);
   await client.ensureBranch(inputs.owner, inputs.repo, inputs.outputBranch, repoMeta.default_branch);
 

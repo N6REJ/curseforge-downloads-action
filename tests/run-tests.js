@@ -6,7 +6,7 @@ const { buildPayload, mergeSnapshots } = require("../src/lib/compute");
 const { parseActionInputs } = require("../src/lib/validation");
 const { getFreshCachedTotal } = require("../src/lib/cache");
 const { isRetryableWriteConflict } = require("../src/lib/change-utils");
-const { createCurseForgeClient } = require("../src/lib/curseforge-api");
+const { createCurseForgeClient, createCfwidgetClient, createDownloadsClient } = require("../src/lib/curseforge-api");
 const { buildDashboardMarkdown } = require("../src/lib/dashboard");
 const { run } = require("../src/index");
 
@@ -301,6 +301,166 @@ async function testCurseForgeClient() {
   }
 }
 
+async function testCfwidgetClient() {
+  const originalFetch = globalThis.fetch;
+
+  try {
+    globalThis.fetch = async () =>
+      new Response(JSON.stringify({ downloads: { total: 5_432, monthly: 100 } }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    const client = createCfwidgetClient();
+    assert.equal(client.source, "cfwidget");
+    assert.equal(await client.getDownloadsTotal(42), 5_432);
+
+    globalThis.fetch = async () =>
+      new Response(JSON.stringify({ downloads: {} }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    await assert.rejects(
+      () => createCfwidgetClient().getDownloadsTotal(42),
+      /downloads\.total/,
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+}
+
+async function testDownloadsClientSelection() {
+  const originalFetch = globalThis.fetch;
+  const silentLogger = { log() {}, warn() {} };
+
+  try {
+    // No key: always cfwidget, single request, no x-api-key header.
+    let calls = [];
+    globalThis.fetch = async (url, opts) => {
+      calls.push({ url, headers: opts.headers });
+      return new Response(JSON.stringify({ downloads: { total: 111 } }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    };
+    const noKey = createDownloadsClient({ cfApiKey: "" });
+    assert.equal(await noKey.getDownloadsTotal(42, silentLogger), 111);
+    assert.equal(noKey.source, "cfwidget");
+    assert.equal(calls.length, 1);
+    assert.ok(calls[0].url.startsWith("https://api.cfwidget.com/"));
+    assert.equal(calls[0].headers["x-api-key"], undefined);
+
+    // Key present and official works: prefer official, no fallback call.
+    calls = [];
+    globalThis.fetch = async (url, opts) => {
+      calls.push({ url, headers: opts.headers });
+      return new Response(JSON.stringify({ data: { downloadCount: 222 } }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    };
+    const withKey = createDownloadsClient({ cfApiKey: "test-key" });
+    assert.equal(await withKey.getDownloadsTotal(42, silentLogger), 222);
+    assert.equal(withKey.source, "curseforge");
+    assert.equal(calls.length, 1);
+    assert.ok(calls[0].url.startsWith("https://api.curseforge.com/"));
+    assert.equal(calls[0].headers["x-api-key"], "test-key");
+
+    // Key present but official fails (403): fall back to cfwidget.
+    calls = [];
+    globalThis.fetch = async (url, opts) => {
+      calls.push({ url, headers: opts.headers });
+      if (url.startsWith("https://api.curseforge.com/")) {
+        return new Response(JSON.stringify({ error: "unknown error" }), { status: 403 });
+      }
+      return new Response(JSON.stringify({ downloads: { total: 333 } }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    };
+    const fallback = createDownloadsClient({ cfApiKey: "bad-key" });
+    assert.equal(await fallback.getDownloadsTotal(42, silentLogger), 333);
+    assert.equal(fallback.source, "cfwidget");
+    assert.equal(calls.length, 2);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+}
+
+async function testRunUsesCfwidgetWhenNoKey() {
+  const originalFetch = globalThis.fetch;
+
+  try {
+    let requestUrl = null;
+    globalThis.fetch = async (url) => {
+      requestUrl = url;
+      return new Response(JSON.stringify({ downloads: { total: 777 } }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    };
+
+    const parseInputs = () => ({
+      token: "",
+      owner: "x",
+      repo: "y",
+      curseforgeModId: 123,
+      cfApiKey: "",
+      windowDays: 365,
+      hourlyEnabled: false,
+      outputBranch: "stats-data",
+      outputPath: "curseforge/downloads.json",
+      minRefreshMinutes: 0,
+      publishChart: false,
+      chartOutputPath: "curseforge/downloads-trend.svg",
+      chartTypes: ["total-trend"],
+      chartThemes: ["slate"],
+      chartsOutputDir: "curseforge/charts",
+      chartWidth: 1000,
+      chartHeight: 360,
+      chartZeroBaseline: true,
+      chartYTicks: 6,
+      chartXLabelEveryDays: 0,
+      chartShowValueLabels: false,
+      chartDateLabelFormat: "yyyy-mm-dd",
+      chartShowGeneratedAt: true,
+      chartTitleMode: "default",
+      chartTitleText: "",
+      publishDashboard: false,
+      dashboardPath: "curseforge/dashboard.md",
+    });
+
+    let published = null;
+    const fakeClient = {
+      async getRepository() {
+        return { default_branch: "main", private: false };
+      },
+      async ensureBranch() {},
+      async getFile() {
+        return null;
+      },
+      async putFile(_o, _r, _p, _b, content) {
+        published = JSON.parse(content);
+      },
+    };
+
+    await run({
+      env: { GITHUB_TOKEN: "token" },
+      parseActionInputs: parseInputs,
+      createGitHubClient: () => fakeClient,
+      nowProvider: () => new Date("2026-10-20T00:00:00Z"),
+      setOutput: () => {},
+      appendSummary: () => {},
+      logger: { log() {}, warn() {} },
+    });
+
+    assert.ok(requestUrl.startsWith("https://api.cfwidget.com/"));
+    assert.equal(published.stats.total, 777);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+}
+
+
 async function testRunRequiresCurseforgeInputs() {
   const baseParse = (overrides) => () => ({
     token: "",
@@ -319,16 +479,6 @@ async function testRunRequiresCurseforgeInputs() {
         logger: { log() {}, warn() {} },
       }),
     /mod id is required/,
-  );
-
-  await assert.rejects(
-    () =>
-      run({
-        env: { GITHUB_TOKEN: "token" },
-        parseActionInputs: baseParse({ cfApiKey: "" }),
-        logger: { log() {}, warn() {} },
-      }),
-    /API key is required/,
   );
 }
 
@@ -913,6 +1063,9 @@ async function runTests() {
   testDashboardMarkdownTracksWindowDays();
   testDashboardMarkdownIncludesCharts();
   await testCurseForgeClient();
+  await testCfwidgetClient();
+  await testDownloadsClientSelection();
+  await testRunUsesCfwidgetWhenNoKey();
   await testRunRequiresCurseforgeInputs();
   await testRunUsesCacheAndSkipsApi();
   await testRunRetriesOnWriteConflict();

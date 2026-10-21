@@ -50,8 +50,8 @@ async function publishPayload({ client, curseForgeClient, inputs, repoMeta, now,
         total = cachedTotal;
         totalSource = "cache";
       } else {
-        total = await curseForgeClient.getDownloadsTotal(inputs.curseforgeModId);
-        totalSource = "api";
+        total = await curseForgeClient.getDownloadsTotal(inputs.curseforgeModId, logger);
+        totalSource = curseForgeClient.source || "api";
       }
     }
 

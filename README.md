@@ -23,21 +23,35 @@ Choose one setup template:
 
 1. Download or copy the template that matches the result you want.
 2. Place the file in the repository under `.github/workflows/`.
-3. Add a repository secret named `CF_API_KEY` containing your CurseForge API key (Settings → Secrets and variables → Actions → New repository secret).
-4. Set `curseforge_mod_id` to the numeric CurseForge mod (project) ID you want to track.
+3. Set `curseforge_mod_id` to the numeric CurseForge mod (project) ID you want to track.
+4. (Optional) Add a repository secret named `CF_API_KEY` for the official CurseForge for Studios API (Settings → Secrets and variables → Actions → New repository secret). Without it, the action uses the public [cfwidget](https://cfwidget.com/) API, which needs no key.
 5. Commit and push.
 6. Open the repository's **Actions** tab and select **Run workflow** once.
 7. Add one or both badges to the README, replacing `_OWNER_` and `_REPOSITORY_`:
 
 ```md
-![Downloads total](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2F_OWNER_%2F_REPOSITORY_%2Fstats-data%2Fcurseforge%2Fdownloads.json&query=%24.stats.total&label=downloads%2Ftotal&color=0A7EA4)
-![Downloads / day](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2F_OWNER_%2F_REPOSITORY_%2Fstats-data%2Fcurseforge%2Fdownloads.json&query=%24.stats.day&label=downloads%2Fday&color=1E8E3E)
+![Downloads total](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2F_OWNER_%2F_REPOSITORY%2Fstats-data%2Fcurseforge%2Fdownloads.json&query=%24.stats.total&label=downloads%2Ftotal&color=0A7EA4)
+![Downloads / day](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2F_OWNER_%2F_REPOSITORY%2Fstats-data%2Fcurseforge%2Fdownloads.json&query=%24.stats.day&label=downloads%2Fday&color=1E8E3E)
 ```
 
 ### Where do I find these values?
 
 - **CurseForge mod id**: open your project on CurseForge. The number in the project URL (`curseforge.com/minecraft/mc-mods/<slug>` → see the project's "Project ID" under the About section) is the `curseforge_mod_id`.
-- **CurseForge API key**: create one from your [CurseForge for Studios](https://console.curseforge.com/) account and store it as the `CF_API_KEY` secret.
+- **CurseForge API key (optional)**: create one from your [CurseForge for Studios](https://console.curseforge.com/) account and store it as the `CF_API_KEY` secret.
+
+### Which download source is used?
+
+The action supports two sources and picks them automatically:
+
+| Condition | Source | Key required | Notes |
+|---|---|---|---|
+| `cf_api_key` set | Official CurseForge for Studios API (`api.curseforge.com`) | Yes | Stable and supported; preferred. |
+| `cf_api_key` unset | Public cfwidget API (`api.cfwidget.com`) | No | Zero-setup fallback for casual use. |
+| Key set but the official API rejects the request | cfwidget fallback | n/a | The action logs a warning and retries against cfwidget. |
+
+Both sources return a single running download total, so day/week/month/year comparisons work the same either way.
+
+> The cfwidget fallback is an independent, community-run service. It is convenient and needs no account, but it is not operated by CurseForge. For the most reliable results, set `CF_API_KEY`.
 
 Public badges need a publicly readable result file. Private repositories usually cannot display them to signed out visitors.
 
@@ -51,7 +65,7 @@ Everything remains in the repository, making the result easy to inspect, reuse, 
 
 ## How it works (short version)
 
-1. Read the download total for your mod from the CurseForge API using `curseforge_mod_id` and the `CF_API_KEY` secret.
+1. Read the download total for your mod from the CurseForge API using `curseforge_mod_id`. If the `CF_API_KEY` secret is set, the official CurseForge for Studios API is used; otherwise the action falls back to the public cfwidget API.
 2. Save one total for the current day.
 3. Compare the available history to show one day, seven day, thirty day, and rolling 365-day changes.
 4. Clearly mark a comparison as partial when there is not yet enough history for the complete period.
@@ -460,7 +474,7 @@ For the `v1` major line, the project follows these stability expectations:
 | `owner` | No | workflow repo owner | string | Target repo owner (publish destination) |
 | `repo` | No | workflow repo name | string | Target repo name (publish destination) |
 | `curseforge_mod_id` | Yes | – | integer | CurseForge mod (project) ID whose download total is tracked |
-| `cf_api_key` | No | empty | string | CurseForge API key (`${{ secrets.CF_API_KEY }}` recommended) |
+| `cf_api_key` | No | empty | string | Optional CurseForge for Studios API key (`${{ secrets.CF_API_KEY }}`); when empty, the public cfwidget API is used (no key) |
 | `window_days` | No | `365` | integer | Allowed range: `1..3650`; keep `>=365` for a complete year comparison |
 | `enable_hourly_profile` | No | `false` | boolean | true/false, 1/0, yes/no accepted |
 | `output_branch` | No | `stats-data` | string | Must be a valid git branch name |
@@ -527,7 +541,7 @@ For a new setup, expect weekly and monthly comparisons to remain partial until e
 | Badge says `resource not found` | Repo is private | Publish data from a public repo/branch for public badges |
 | `partial.week` or `partial.month` is `true` | Warm-up period or missing baseline snapshots | Wait for enough snapshots; this is expected during early runs |
 | Values look very low | Mod has little/no download traffic | Confirm the mod id is correct and the project has real downloads |
-| Action fails with `401`/`403` | Missing or invalid CurseForge API key | Set the `CF_API_KEY` secret and pass `cf_api_key: ${{ secrets.CF_API_KEY }}` |
+| Action fails with `401`/`403` | CurseForge API key set but invalid, and the cfwidget fallback also rejected the request | Check the `CF_API_KEY` secret, or remove it to use the keyless cfwidget fallback |
 | Action fails with `404` | Wrong CurseForge mod id | Check `curseforge_mod_id` against your project's Project ID |
 | Workflow reports no commit | No material change between previous and current payload | Check `published` output; this is expected when totals did not change |
 | Push/write fails on `stats-data` | Missing write permission or branch protection blocks Actions | Set `permissions: contents: write`, pass `token`, allow Actions to push or use another branch |
