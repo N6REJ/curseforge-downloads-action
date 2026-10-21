@@ -848,7 +848,7 @@ function testBuildDashboardMarkdown() {
   assert.match(markdown, /style=flat-square/);
   assert.match(markdown, /cacheSeconds=900/);
   assert.match(markdown, /\| Window \| 30 days \|/);
-  assert.match(markdown, /\| Year \| 0 \(partial\) \|/);
+      assert.match(markdown, /\| Year \| 120 \(partial\) \|/);
   assert.match(markdown, /downloads%2Fyear/);
   assert.match(markdown, /\| CurseForge mod id \| `234567` \|/);
   assert.match(markdown, /raw\.githubusercontent\.com\/x\/y\/stats-data\/curseforge\/downloads\.json/);
