@@ -22,7 +22,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
-          ref: ${{ inputs.tag || github.ref }}
+          ref: main
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/setup-node@1e60f620b9541d16bece96c5465dc8ee9832be0b
@@ -53,9 +53,7 @@ jobs:
           git add package.json
           if ! git diff --cached --quiet; then
             git commit -m "chore: bump version to ${TAG} [skip ci]"
-            if git rev-parse --abbrev-ref HEAD >/dev/null 2>&1 && [[ "$(git rev-parse --abbrev-ref HEAD)" != "HEAD" ]]; then
-              git push origin HEAD
-            fi
+            git push origin HEAD:main
           else
             echo "package.json already at version ${TAG}"
           fi
