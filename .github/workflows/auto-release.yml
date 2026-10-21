@@ -111,7 +111,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-          ref: ${{ steps.resolve.outputs.tag }}
+          ref: main
 
       - name: Publish GitHub release
         if: ${{ steps.resolve.outputs.tag != '' }}
@@ -125,7 +125,7 @@ jobs:
           if gh release view "$TAG" --repo "$REPOSITORY" >/dev/null 2>&1; then
             echo "Release for $TAG already exists; leaving it unchanged."
           else
-            gh release create "$TAG" --repo "$REPOSITORY" --verify-tag --generate-notes
+            gh release create "$TAG" --repo "$REPOSITORY" --generate-notes
             echo "Created release for $TAG."
           fi
 
