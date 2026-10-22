@@ -250,6 +250,24 @@ function testBuildChartSvgYearly() {
   assert.match(svg, /<svg/);
 }
 
+function testBuildChartSvgYearlyWithExplicitZeroBaseline() {
+  const svg = buildChartSvg({
+    owner: "x",
+    repo: "y",
+    generatedAt: "2026-02-18T10:00:00.000Z",
+    chartType: "yearly",
+    chartTheme: "slate",
+    series: {
+      "2026-02-14": 0,
+      "2026-02-15": 40000,
+      "2026-02-17": 40500,
+      "2026-02-18": 41000,
+    },
+  });
+
+  assert.match(svg, /Latest year: 41,000/);
+}
+
 function testBuildChartSvgHidesDateLabelsWhenDisabled() {
   const svg = buildChartSvg({
     owner: "x",
@@ -279,6 +297,7 @@ function run() {
   testBuildTrendChartSvg();
   testBuildChartSvgVariants();
   testBuildChartSvgYearly();
+  testBuildChartSvgYearlyWithExplicitZeroBaseline();
   testBuildChartSvgHidesDateLabelsWhenDisabled();
   console.log("compat checks passed");
 }

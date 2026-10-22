@@ -135,20 +135,8 @@ function toChartEntries(entries, chartType) {
   }
 
   return entries.map(([date, total], index) => {
-    const periodStart = bucketStart(date);
-    const baseline = pickBaseline(entries, periodStart, index);
-    // When history begins after the calendar month/year started, the first
-    // observed total is the user's starting point. Treat its baseline as zero
-    // so monthly/yearly charts begin at the same value as the total trend.
-    const hasSnapshotAtOrBeforePeriodStart = entries
-      .slice(0, index + 1)
-      .some(([entryDate]) => entryDate <= periodStart);
-    const firstObservedPeriod =
-      (bucket === "month" || bucket === "year") &&
-      baseline &&
-      baseline[0] > periodStart &&
-      !hasSnapshotAtOrBeforePeriodStart;
-    const baselineValue = firstObservedPeriod ? 0 : baseline ? baseline[1] : total;
+    const baseline = pickBaseline(entries, bucketStart(date), index);
+    const baselineValue = baseline ? baseline[1] : total;
     return { date, value: Math.max(0, total - baselineValue) };
   });
 }
