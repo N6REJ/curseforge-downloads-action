@@ -258,6 +258,10 @@ function testRetryableWriteConflictClassification() {
     isRetryableWriteConflict({ status: 422, message: "sha does not match" }),
     true,
   );
+  assert.equal(
+    isRetryableWriteConflict({ status: 422, message: "Update is not a fast forward" }),
+    true,
+  );
   assert.equal(isRetryableWriteConflict({ status: 422, message: "unprocessable" }), false);
   assert.equal(isRetryableWriteConflict({ status: 500, message: "boom" }), false);
 }
@@ -1159,6 +1163,94 @@ function testCalendarRetentionDays() {
   assert.equal(calendarRetentionDays("2026-02-18"), 49);
 }
 
+async function testRunBatchesAllFilesIntoSingleCommit() {
+  const now = new Date("2026-02-18T12:00:00.000Z");
+  const owner = "x";
+  const repo = "y";
+  const outputs = {};
+  let putFilesCalls = 0;
+  let committedFiles = [];
+  let committedMessage = "";
+
+  const existingPayload = buildPayload({
+    owner,
+    repo,
+    visibility: "public",
+    generatedAt: "2026-02-17T12:00:00.000Z",
+    total: 10,
+    todayDate: "2026-02-17",
+    windowDays: 45,
+    series: { "2026-02-17": 10 },
+    hourlyEnabled: false,
+  });
+
+  const client = {
+    async getRepository() {
+      return { default_branch: "main", private: false };
+    },
+    async ensureBranch() {},
+    async getFile(_owner, _repo, path) {
+      if (path === "curseforge/downloads.json") {
+        return { sha: "sha-json", content: JSON.stringify(existingPayload) };
+      }
+      if (path === "curseforge/dashboard.md") {
+        return null;
+      }
+      return { sha: "sha-chart", content: "<svg/>" };
+    },
+    async putFiles(_owner, _repo, _branch, files, message) {
+      putFilesCalls += 1;
+      committedFiles = files;
+      committedMessage = message;
+    },
+  };
+
+  const curseForgeClient = {
+    async getDownloadsTotal() {
+      return 20;
+    },
+  };
+
+  await run({
+    env: { GITHUB_TOKEN: "token" },
+    parseActionInputs: () =>
+      baseInputs({
+        publishChart: true,
+        chartTypes: ["total-trend", "daily"],
+        chartThemes: ["black"],
+        publishDashboard: true,
+      }),
+    createGitHubClient: () => client,
+    createCurseForgeClient: () => curseForgeClient,
+    nowProvider: () => now,
+    setOutput: (name, value) => {
+      outputs[name] = value;
+    },
+    appendSummary: () => {},
+    logger: { log() {}, warn() {} },
+  });
+
+  assert.equal(putFilesCalls, 1);
+  assert.equal(
+    committedMessage,
+    "chore(curseforge): update downloads snapshot for x/y (2026-02-18)",
+  );
+  assert.deepEqual(
+    committedFiles.map((f) => f.path).sort(),
+    [
+      "curseforge/charts/daily--black.svg",
+      "curseforge/charts/total-trend--black.svg",
+      "curseforge/dashboard.md",
+      "curseforge/downloads-trend.svg",
+      "curseforge/downloads.json",
+    ],
+  );
+  assert.equal(outputs.published, true);
+  assert.equal(outputs.chart_published, true);
+  assert.equal(outputs.chart_published_count, 3);
+  assert.equal(outputs.dashboard_published, true);
+}
+
 async function runTests() {
   testMergeWindow();
   testPayload();
@@ -1188,6 +1280,7 @@ async function runTests() {
   await testRunPublishesChartWhenEnabled();
   await testRunPublishesDashboardWhenEnabled();
   await testRunSkipsDashboardMissingWindowRow();
+  await testRunBatchesAllFilesIntoSingleCommit();
   console.log("public tests passed");
 }
 

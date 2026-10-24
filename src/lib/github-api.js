@@ -247,11 +247,78 @@ function createGitHubClient(token) {
     );
   }
 
+  async function putFiles(owner, repo, branch, files, message) {
+    if (!Array.isArray(files) || files.length === 0) return null;
+
+    const refData = await getRef(owner, repo, branch, false);
+    const parentSha = refData?.object?.sha;
+    if (!parentSha) {
+      throw new Error(`Could not resolve HEAD SHA for branch '${branch}'.`);
+    }
+
+    const commitData = await request(
+      "GET",
+      `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/git/commits/${encodeURIComponent(parentSha)}`,
+    );
+    const baseTreeSha = commitData?.tree?.sha;
+    if (!baseTreeSha) {
+      throw new Error(`Could not resolve base tree SHA for commit '${parentSha}'.`);
+    }
+
+    const treeData = await request(
+      "POST",
+      `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/git/trees`,
+      {
+        body: {
+          base_tree: baseTreeSha,
+          tree: files.map((file) => ({
+            path: file.path,
+            mode: "100644",
+            type: "blob",
+            content: file.content,
+          })),
+        },
+      },
+    );
+    const newTreeSha = treeData?.sha;
+    if (!newTreeSha) {
+      throw new Error("Could not create git tree for snapshot update.");
+    }
+
+    const newCommitData = await request(
+      "POST",
+      `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/git/commits`,
+      {
+        body: {
+          message,
+          tree: newTreeSha,
+          parents: [parentSha],
+        },
+      },
+    );
+    const newCommitSha = newCommitData?.sha;
+    if (!newCommitSha) {
+      throw new Error("Could not create git commit for snapshot update.");
+    }
+
+    return request(
+      "PATCH",
+      `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/git/refs/heads/${encodeURIComponent(branch)}`,
+      {
+        body: {
+          sha: newCommitSha,
+          force: false,
+        },
+      },
+    );
+  }
+
   return {
     ensureBranch,
     getFile,
     getRepository,
     putFile,
+    putFiles,
   };
 }
 

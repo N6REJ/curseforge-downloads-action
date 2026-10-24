@@ -278,7 +278,214 @@ async function publishDashboardIfEnabled({ client, inputs, payload, commitMessag
   throw new Error("Failed to publish dashboard after retries.");
 }
 
+async function publishAll({ client, curseForgeClient, inputs, repoMeta, now, logger }) {
+  if (typeof client.putFiles !== "function") {
+    const publishResult = await publishPayload({
+      client,
+      curseForgeClient,
+      inputs,
+      repoMeta,
+      now,
+      logger,
+    });
+    const chartResult = await publishChartIfEnabled({
+      client,
+      inputs,
+      payload: publishResult.payload,
+      commitMessage: publishResult.commitMessage,
+      logger,
+    });
+    const dashboardResult = await publishDashboardIfEnabled({
+      client,
+      inputs,
+      payload: publishResult.payload,
+      commitMessage: publishResult.commitMessage,
+      logger,
+    });
+    return {
+      payload: publishResult.payload,
+      changed: publishResult.changed,
+      totalSource: publishResult.totalSource,
+      commitMessage: publishResult.commitMessage,
+      chartResult,
+      dashboardResult,
+    };
+  }
+
+  const todayDate = formatDateUTC(now);
+  const generatedAt = now.toISOString();
+  const commitMessage = `chore(curseforge): update downloads snapshot for ${inputs.owner}/${inputs.repo} (${todayDate})`;
+
+  const maxPublishAttempts = 4;
+  let total = null;
+  let totalSource = "api";
+  const effectiveWindowDays = Math.max(inputs.windowDays, calendarRetentionDays(todayDate));
+  const chartTargets = inputs.publishChart ? buildChartTargets(inputs) : [];
+
+  for (let attempt = 1; attempt <= maxPublishAttempts; attempt += 1) {
+    const previousFile = await client.getFile(
+      inputs.owner,
+      inputs.repo,
+      inputs.outputPath,
+      inputs.outputBranch,
+    );
+    const previousPayload = parseJsonOrNull(previousFile?.content);
+    const previousSeries = extractPreviousSeries(
+      previousFile?.content,
+      inputs.owner,
+      inputs.repo,
+      logger.warn.bind(logger),
+    );
+
+    if (total === null) {
+      const cachedTotal = getFreshCachedTotal(
+        previousPayload,
+        inputs.owner,
+        inputs.repo,
+        now,
+        inputs.minRefreshMinutes,
+      );
+      if (cachedTotal !== null) {
+        total = cachedTotal;
+        totalSource = "cache";
+      } else {
+        total = await curseForgeClient.getDownloadsTotal(inputs.curseforgeModId, logger);
+        totalSource = curseForgeClient.source || "api";
+      }
+    }
+
+    const mergedSeries = mergeSnapshots(previousSeries, todayDate, total, effectiveWindowDays);
+
+    const payload = buildPayload({
+      owner: inputs.owner,
+      repo: inputs.repo,
+      visibility: repoMeta.private ? "private" : "public",
+      generatedAt,
+      total,
+      todayDate,
+      windowDays: effectiveWindowDays,
+      series: mergedSeries,
+      hourlyEnabled: inputs.hourlyEnabled,
+    });
+
+    const changed = hasMaterialChange(previousPayload, payload);
+    const filesToCommit = [];
+
+    if (changed) {
+      filesToCommit.push({
+        path: inputs.outputPath,
+        content: `${JSON.stringify(payload, null, 2)}\n`,
+      });
+    }
+
+    let chartPublishedCount = 0;
+    for (const target of chartTargets) {
+      const chartSvg = buildChartSvg({
+        owner: inputs.owner,
+        repo: inputs.repo,
+        series: payload.snapshots.series,
+        generatedAt: payload.generatedAt,
+        chartType: target.chartType,
+        chartTheme: target.chartTheme,
+        width: inputs.chartWidth,
+        height: inputs.chartHeight,
+        zeroBaseline: inputs.chartZeroBaseline,
+        yTicks: inputs.chartYTicks,
+        xLabelEveryDays: inputs.chartXLabelEveryDays,
+        showValueLabels: inputs.chartShowValueLabels,
+        dateLabelFormat: inputs.chartDateLabelFormat,
+        showGeneratedAt: inputs.chartShowGeneratedAt,
+        titleMode: inputs.chartTitleMode,
+        titleText: inputs.chartTitleText,
+      });
+
+      const previousChartFile = await client.getFile(
+        inputs.owner,
+        inputs.repo,
+        target.path,
+        inputs.outputBranch,
+      );
+
+      if (hasTextChange(previousChartFile?.content, chartSvg)) {
+        filesToCommit.push({
+          path: target.path,
+          content: chartSvg,
+        });
+        chartPublishedCount += 1;
+      }
+    }
+
+    let dashboardPublished = false;
+    if (inputs.publishDashboard) {
+      const previousDashboardFile = await client.getFile(
+        inputs.owner,
+        inputs.repo,
+        inputs.dashboardPath,
+        inputs.outputBranch,
+      );
+
+      if (previousDashboardFile?.content != null && !hasWindowRow(previousDashboardFile.content)) {
+        logger.warn(
+          `Skipping dashboard update for ${inputs.outputBranch}:${inputs.dashboardPath}: existing file is missing the window row.`,
+        );
+      } else {
+        const markdown = refreshDashboardData(previousDashboardFile?.content ?? null, {
+          inputs,
+          payload,
+        });
+        if (hasTextChange(previousDashboardFile?.content, markdown)) {
+          filesToCommit.push({
+            path: inputs.dashboardPath,
+            content: markdown,
+          });
+          dashboardPublished = true;
+        }
+      }
+    }
+
+    if (filesToCommit.length > 0) {
+      try {
+        await client.putFiles(
+          inputs.owner,
+          inputs.repo,
+          inputs.outputBranch,
+          filesToCommit,
+          commitMessage,
+        );
+      } catch (error) {
+        if (attempt >= maxPublishAttempts || !isRetryableWriteConflict(error)) {
+          throw error;
+        }
+        logger.warn(
+          `Detected concurrent write for ${inputs.outputBranch}. Retrying publish (${attempt}/${maxPublishAttempts}).`,
+        );
+        continue;
+      }
+    }
+
+    return {
+      payload,
+      changed,
+      totalSource,
+      commitMessage,
+      chartResult: {
+        publishedAny: chartPublishedCount > 0,
+        publishedCount: chartPublishedCount,
+        totalCount: chartTargets.length,
+        files: chartTargets.map((target) => target.path),
+      },
+      dashboardResult: {
+        published: dashboardPublished,
+        path: inputs.dashboardPath,
+      },
+    };
+  }
+
+  throw new Error("Failed to publish snapshot after retries.");
+}
+
 module.exports = {
+  publishAll,
   publishPayload,
   publishChartIfEnabled,
   publishDashboardIfEnabled,

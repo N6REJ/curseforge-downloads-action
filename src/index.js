@@ -5,7 +5,7 @@ const fs = require("node:fs");
 const { parseActionInputs } = require("./lib/validation");
 const { createGitHubClient } = require("./lib/github-api");
 const { createDownloadsClient } = require("./lib/curseforge-api");
-const { publishPayload, publishChartIfEnabled, publishDashboardIfEnabled } = require("./lib/publish");
+const { publishAll } = require("./lib/publish");
 
 function setOutput(name, value) {
   const outputFile = process.env.GITHUB_OUTPUT;
@@ -108,7 +108,7 @@ async function run(options = {}) {
   await client.ensureBranch(inputs.owner, inputs.repo, inputs.outputBranch, repoMeta.default_branch);
 
   const now = nowProvider();
-  const publishResult = await publishPayload({
+  const publishResult = await publishAll({
     client,
     curseForgeClient,
     inputs,
@@ -117,21 +117,7 @@ async function run(options = {}) {
     logger,
   });
 
-  const chartResult = await publishChartIfEnabled({
-    client,
-    inputs,
-    payload: publishResult.payload,
-    commitMessage: publishResult.commitMessage,
-    logger,
-  });
-
-  const dashboardResult = await publishDashboardIfEnabled({
-    client,
-    inputs,
-    payload: publishResult.payload,
-    commitMessage: publishResult.commitMessage,
-    logger,
-  });
+  const { chartResult, dashboardResult } = publishResult;
 
   const result = {
     inputs,

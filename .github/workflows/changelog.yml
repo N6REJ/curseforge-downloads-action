@@ -48,7 +48,7 @@ jobs:
           lines = p("generated.md").read_text(encoding="utf-8").splitlines()
           kept = [
               l for l in lines
-              if not re.match(r"^\*\s*Update\s+(?:downloads|stats)\s+(?:tracking\s+)?snapshot", l)
+              if not re.match(r"^\*\s*(?:chore\(curseforge\):\s*)?[Uu]pdate\s+(?:downloads|stats)\s+(?:tracking\s+)?snapshot", l)
               and not l.startswith("<!-- Release notes generated")
           ]
           out = []

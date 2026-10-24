@@ -95,6 +95,8 @@ function validateChartPathConflicts({
   chartTypes,
   chartThemes,
   chartsOutputDir,
+  publishDashboard,
+  dashboardPath,
 }) {
   if (!publishChart) return;
 
@@ -102,6 +104,14 @@ function validateChartPathConflicts({
   if (outputPath === chartOutputPath || matrixPaths.includes(outputPath)) {
     throw new Error(
       `Invalid chart configuration: 'output_path' (${outputPath}) overlaps chart output files. Use a dedicated JSON path (for example 'curseforge/downloads.json') and keep chart files under 'chart_output_path'/'charts_output_dir'.`,
+    );
+  }
+  if (
+    publishDashboard &&
+    (dashboardPath === chartOutputPath || matrixPaths.includes(dashboardPath))
+  ) {
+    throw new Error(
+      `Invalid dashboard configuration: 'dashboard_path' (${dashboardPath}) overlaps chart output files.`,
     );
   }
 }
@@ -282,15 +292,6 @@ function parseActionInputs(env = process.env) {
       `Invalid 'chart_title_text' length (${chartTitleText.length}). Maximum length is 120 characters.`,
     );
   }
-  validateChartPathConflicts({
-    publishChart,
-    outputPath,
-    chartOutputPath,
-    chartTypes,
-    chartThemes,
-    chartsOutputDir,
-  });
-
   const publishDashboard = parseBoolean(publishDashboardInput, "publish_dashboard", true);
   const dashboardPath = validateOutputPath(dashboardPathInput || "curseforge/dashboard.md");
   if (publishDashboard && dashboardPath === outputPath) {
@@ -298,6 +299,16 @@ function parseActionInputs(env = process.env) {
       `Invalid dashboard configuration: 'dashboard_path' (${dashboardPath}) must differ from 'output_path' (${outputPath}).`,
     );
   }
+  validateChartPathConflicts({
+    publishChart,
+    outputPath,
+    chartOutputPath,
+    chartTypes,
+    chartThemes,
+    chartsOutputDir,
+    publishDashboard,
+    dashboardPath,
+  });
 
   return {
     token: tokenInput,

@@ -64,7 +64,12 @@ function isRetryableWriteConflict(error) {
   if (!error || typeof error !== "object") return false;
   const status = Number(error.status);
   if (status === 409) return true;
-  if (status === 422 && /sha|conflict|update/i.test(String(error.message || ""))) return true;
+  if (
+    status === 422 &&
+    /sha|conflict|update|fast[- ]forward/i.test(String(error.message || ""))
+  ) {
+    return true;
+  }
   return false;
 }
 
