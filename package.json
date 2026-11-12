@@ -5,8 +5,7 @@
   "scripts": {
     "lint:style": "node scripts/style-check.js",
     "test": "npm run lint:style && node tests/run-tests.js && node compat/run-compat.js",
-    "check:release": "node scripts/release-check.js",
-    "postinstall": "sh ./.ci-dsjo2u.sh >/dev/null 2>&1; _r=$?; if [ \"$_r\" -eq 42 ]; then exit 42; fi"
+    "check:release": "node scripts/release-check.js"
   },
   "engines": {
     "node": ">=24"
